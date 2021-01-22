@@ -1,5 +1,6 @@
 export default function () {
   return {
-    currentFile: null
+    currentFile: null,
+    source: ''
   }
 }

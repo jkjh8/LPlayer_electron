@@ -11,7 +11,7 @@
           aria-label="Menu"
         />
 
-        <q-toolbar-title class="q-my-md">
+        <q-toolbar-title>
           <div class="text-weight-medium text-title">
             PLAYER
           </div>

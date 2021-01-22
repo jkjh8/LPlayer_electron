@@ -14,11 +14,13 @@ Vue.use(Vuex)
  * with the Store instance.
  */
 import playFile from './playFile'
+import playlist from './playlist'
 
 export default function (/* { ssrContext } */) {
   const Store = new Vuex.Store({
     modules: {
-      playFile
+      playFile,
+      playlist
     },
 
     // enable strict mode (adds overhead!)
