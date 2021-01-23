@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <q-page>
+    <q-card></q-card>
     <q-list bordered>
       <q-item
         v-for="(file, idx) in files"
@@ -8,6 +9,7 @@
         v-ripple
         :active="current === file"
         active-class="my-menu-link"
+        class="menu-link"
         @click="selectPlaylist(file, idx)"
       >
 
@@ -47,7 +49,7 @@
     </q-page-sticky>
     <!-- add files -->
     <q-file v-show="false" multiple ref="file" accept='audio/*' @input="addPlaylistFile"></q-file>
-  </div>
+  </q-page>
 </template>
 
 <script>
@@ -122,9 +124,18 @@ export default {
 </script>
 
 <style lang="sass">
+.menu-link .q-item__label--caption
+  body.screen--sm &
+    max-width: 599
+  body.screen--md &
+    max-width: 400px
 .my-menu-link
   color: white
   background: #F2C037
 .my-menu-link .q-item__label--caption
   color: white
+  body.screen--sm &
+    max-width: 599
+  body.screen--md &
+    max-width: 400px
 </style>

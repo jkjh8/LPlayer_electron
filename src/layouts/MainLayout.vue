@@ -36,7 +36,7 @@
       <router-view />
     </q-page-container>
 
-    <q-footer  class="bg-grey-8 text-white">
+    <q-footer elevated class="bg-grey-8 text-white">
       <CompenntPlayer />
     </q-footer>
   </q-layout>

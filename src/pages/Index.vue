@@ -1,17 +1,29 @@
 <template>
   <div>
-    <div class="fit row">
-      <div class="col-xs-12 col-sm-8">
+    <q-splitter
+      v-model="splitterModel"
+      reverse
+      unit="px"
+      style="height: calc(100vh - 165px)"
+    >
+
+      <template v-slot:before>
         <Status />
-      </div>
-      <div class="col-sx-12 col-sm-4">
+      </template>
+
+      <template v-slot:after>
+        <div>
+          1234
+        </div>
         <Playlist />
-      </div>
-    </div>
+      </template>
+
+    </q-splitter>
   </div>
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import Status from '../components/Status'
 import Playlist from '../components/Playlist'
 
@@ -20,9 +32,14 @@ export default {
   components: {
     Status, Playlist
   },
+  computed: {
+    ...mapState({
+      playlistPlay: state => state.playlist.playlistPlay
+    })
+  },
   data () {
     return {
-      right: false
+      splitterModel: 0
     }
   }
 }
