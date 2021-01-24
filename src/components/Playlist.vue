@@ -1,6 +1,5 @@
 <template>
   <q-page>
-    <q-card></q-card>
     <q-list bordered>
       <q-item
         v-for="(file, idx) in files"
