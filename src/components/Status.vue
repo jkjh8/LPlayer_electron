@@ -22,25 +22,27 @@
 
       <template v-slot:item="props">
         <div
-          class="q-pa-xs col-xs-12 col-sm-6 col-md-4 col-lg-2 grid-style-transition"
+          class="q-ma-sm grid-style-transition"
           :style="props.selected ? 'transform: scale(0.95);' : ''"
         >
-          <q-card :class="props.selected ? 'bg-grey-2' : ''">
-            <q-card-section>
-              <q-checkbox dense v-model="props.selected" :label="props.row.name" />
-            </q-card-section>
-            <q-separator />
-            <q-list dense>
-              <q-item v-for="col in props.cols.filter(col => col.name !== 'desc')" :key="col.name">
-                <q-item-section>
-                  <q-item-label>{{ col.label }}</q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                  <q-item-label caption>{{ col.value }}</q-item-label>
-                </q-item-section>
-              </q-item>
-            </q-list>
-          </q-card>
+          <q-btn padding="0" @click="props.selected=!props.selected">
+            <q-card :class="props.selected ? 'bg-grey-4' : 'bg-white'">
+              <q-card-section>
+                <q-checkbox dense v-model="props.selected" :label="props.row.name" />
+              </q-card-section>
+              <q-separator />
+              <q-list dense>
+                <q-item v-for="col in props.cols.filter(col => col.name !== 'desc')" :key="col.name">
+                  <q-item-section>
+                    <q-item-label>{{ col.label }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <q-item-label caption>{{ col.value }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-card>
+          </q-btn>
         </div>
       </template>
 
