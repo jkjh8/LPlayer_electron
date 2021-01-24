@@ -12,9 +12,6 @@
       </template>
 
       <template v-slot:after>
-        <div>
-          1234
-        </div>
         <Playlist />
       </template>
 
