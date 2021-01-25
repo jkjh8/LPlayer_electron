@@ -68,7 +68,7 @@
         >
           <q-btn
             padding="0"
-            :disable="props.row.status ? true : false"
+            :disable="props.row.status||globalPlaying ? true : false"
             @click="props.selected=!props.selected">
             <q-card
               :class="props.selected ? 'bg-blue-grey-10 status' : 'bg-white status'"
@@ -126,7 +126,8 @@ export default {
   },
   computed: {
     ...mapState({
-      status: state => state.status.status
+      status: state => state.status.status,
+      globalPlaying: state => state.playFile.globalPlaying
     }),
     btnStatus (id) {
       if (id) { return true } else { return false }
@@ -166,6 +167,7 @@ export default {
     },
     selectedCallback (data) {
       this.$store.commit('status/updateSelected', data)
+      console.log(this.globalPlaying)
     }
   }
 }

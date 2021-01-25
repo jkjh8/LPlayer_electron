@@ -122,13 +122,13 @@ export default {
       hDration: 0,
       playing: false,
       meta: null,
-      loop: false,
-      playAndZoneSel: false
+      loop: false
     }
   },
   computed: {
     ...mapState({
       file: state => state.playFile.currentFile,
+      globalPlaying: state => state.playFile.globalPlaying,
       source: state => state.playFile.source,
       playlistLoop: state => state.playlist.playlistLoop,
       playlistPlay: state => state.playlist.playlistPlay,
@@ -157,7 +157,7 @@ export default {
       this.currentTime = null
     },
     play () {
-      if (this.playAndZoneSel) {
+      if (this.globalPlaying) {
         this.$refs.audio.play()
       } else {
         this.$q.dialog({
@@ -166,7 +166,7 @@ export default {
           html: true,
           cancel: true
         }).onOk(async () => {
-          this.playAndZoneSel = true
+          this.$store.commit('playFile/play', true)
           this.$refs.audio.play()
         })
       }
@@ -177,12 +177,12 @@ export default {
     },
     async stop () {
       await this.$refs.audio.pause()
-      if (this.playAndZoneSel) {
+      if (this.globalPlaying) {
         this.$q.notify({
           type: 'info',
           message: `Player Stop Play ${this.file.name}.`
         })
-        this.playAndZoneSel = false
+        this.$store.commit('playFile/play', false)
       }
       setTimeout(() => {
         this.currentTime = 0

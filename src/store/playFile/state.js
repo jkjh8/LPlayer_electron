@@ -1,6 +1,7 @@
 export default function () {
   return {
     currentFile: null,
-    source: ''
+    source: '',
+    globalPlaying: false
   }
 }
