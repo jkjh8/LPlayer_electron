@@ -7,64 +7,64 @@
         :max="duration"
         snap
         label
-        :label-value="hCurrentTime"
+        :label-value="timeLabel"
         color="pink"
         @input="changeTime"
       />
     </div>
     <div class="q-ma-md row justify-center items-center content-center">
-      <div v-if="file" class="col-xs-12 col-sm-6">
-        <div v-if="playlistPlay">
+      <div v-if="player.file" class="col-xs-12 col-sm-6">
+        <div v-if="player.playlistPlay">
           Playlist Play
         </div>
         <div
-          v-if="meta && meta.media.track[0].Title"
+          v-if="player.meta && player.meta.media.track[0].Title"
           class="text-weight-bold respText"
         >
-          {{ meta.media.track[0].Title }}
+          {{ player.meta.media.track[0].Title }}
         </div>
         <div
-          v-else-if="meta && meta.media.track[0].Track"
+          v-else-if="player.meta && player.meta.media.track[0].Track"
           class="text-weight-bold respText"
         >
-          {{ meta.media.track[0].Track }}
+          {{ player.meta.media.track[0].Track }}
         </div>
         <div
           v-else
           class="text-weight-bold respText"
         >
-          {{ file.name }}
+          {{ player.file.name }}
         </div>
 
         <div
-          v-if="meta && meta.media.track[0].Director"
+          v-if="player.meta && player.meta.media.track[0].Director"
          class="text-grey respText"
         >
-          {{ meta.media.track[0].Director }}
+          {{ player.meta.media.track[0].Director }}
         </div>
         <div
-          v-else-if="meta && meta.media.track[0].Album"
+          v-else-if="player.meta && player.meta.media.track[0].Album"
           class="text-grey respText"
         >
-          {{ meta.media.track[0].Album }}
+          {{ player.meta.media.track[0].Album }}
         </div>
         <div
-          v-else-if="meta && meta.media.track[0].OriginalSourceForm_Name"
+          v-else-if="player.meta && player.meta.media.track[0].OriginalSourceForm_Name"
           class="text-grey respText"
         >
-          {{ meta.media.track[0].OriginalSourceForm_Name }}
+          {{ player.meta.media.track[0].OriginalSourceForm_Name }}
         </div>
         <div
-          v-else-if="meta && meta.media.track[0].Performer"
+          v-else-if="player.meta && player.meta.media.track[0].Performer"
           class="text-grey respText"
         >
-          {{ meta.media.track[0].Performer }}
+          {{ player.meta.media.track[0].Performer }}
         </div>
         <div
           v-else
           class="text-grey respText"
         >
-          {{ file.name }}
+          {{ player.file.name }}
         </div>
       </div>
       <div v-else class="col-xs-12 col-sm-6">
@@ -72,16 +72,16 @@
         <div class="text-grey respText">None</div>
       </div>
       <div class="col-sx-12 col-sm-6 respBtns">
-        <q-btn v-if="playlistPlay" color="red" flat round icon="playlist_play" @click="setPlaylistPlay" />
+        <q-btn v-if="player.playlistPlay" color="red" flat round icon="playlist_play" @click="setPlaylistPlay" />
         <q-btn v-else flat round color="white" icon="playlist_play" @click="setPlaylistPlay" />
-        <q-btn v-if="playlistPlay" flat round icon="skip_previous" @click="previous" />
+        <q-btn v-if="player.playlistPlay" flat round icon="skip_previous" @click="previous" />
         <!-- play btn -->
-        <q-btn v-if="!playing" flat round icon="play_arrow" @click="play()" />
+        <q-btn v-if="!player.playing" flat round icon="play_arrow" @click="play()" />
         <q-btn v-else flat round icon="pause" @click="$refs.audio.pause()" />
         <!-- stop btn -->
         <q-btn flat round icon="stop" @click="stop"></q-btn>
 
-        <q-btn v-if="playlistPlay" flat round icon="skip_next" @click="next" />
+        <q-btn v-if="player.playlistPlay" flat round icon="skip_next" @click="next" />
         <!-- loop button  -->
         <q-btn v-if="loop" color="yellow" flat round icon="loop" @click="setLoop" />
         <q-btn v-else color="white" flat round icon="loop" @click="setLoop" />
@@ -93,13 +93,13 @@
     <audio
       ref="audio"
       :loop='loop'
-      @playing="playing=true"
+      @playing="$store.dispatch('playFile/playing', true)"
       @ended="ended"
       @timeupdate="onTimeUpdate"
       @loadeddata="ready"
-      @pause="playing=false"
+      @pause="$store.dispatch('playFile/playing', false)"
     >
-      <source :src="source">
+      <source :src="player.source">
     </audio>
 
     <q-file v-show="false" ref="file" accept='audio/*' @input="open"></q-file>
@@ -117,32 +117,26 @@ export default {
   data () {
     return {
       currentTime: null,
-      hCurrentTime: 0,
+      timeLabel: 0,
       duration: 100,
-      hDration: 0,
-      playing: false,
-      meta: null,
       loop: false
     }
   },
   computed: {
     ...mapState({
-      file: state => state.playFile.currentFile,
-      globalPlaying: state => state.playFile.globalPlaying,
-      source: state => state.playFile.source,
-      playlistLoop: state => state.playlist.playlistLoop,
-      playlistPlay: state => state.playlist.playlistPlay,
+      player: state => state.playFile.player,
       currentPlaylist: state => state.playlist.currentPlaylist,
       selected: state => state.status.selected,
-      status: state => state.status.status
+      status: state => state.status.status,
+      booth: state => state.status.booth
     })
   },
   mounted () {
     this.$root.$on('changePlayFile', async (file) => {
       this.chgPlayFile(file)
     })
-    ipcRenderer.on('returnMeta', (event, fileMeta) => {
-      this.meta = fileMeta
+    ipcRenderer.on('returnMeta', (event, meta) => {
+      this.$store.commit('playFile/updateMeta', meta)
     })
   },
   methods: {
@@ -157,12 +151,13 @@ export default {
       this.currentTime = null
     },
     play () {
-      if (this.globalPlaying) {
+      console.log('play', this.player.globalPlaying)
+      if (this.player.globalPlaying) {
         this.$refs.audio.play()
       } else {
         this.$q.dialog({
           title: 'Play',
-          message: `<div>Play ${this.file.name}</div><div>At ETC...</div>`,
+          message: `<div>Play ${this.player.file.name}</div><div>At ETC...</div>`,
           html: true,
           cancel: true
         }).onOk(async () => {
@@ -171,16 +166,12 @@ export default {
         })
       }
     },
-    playingCallback (e) {
-      console.log('playing', e)
-      this.playing = true
-    },
     async stop () {
       await this.$refs.audio.pause()
-      if (this.globalPlaying) {
+      if (this.player.globalPlaying) {
         this.$q.notify({
           type: 'info',
-          message: `Player Stop Play ${this.file.name}.`
+          message: `Player Stop Play ${this.player.file.name}.`
         })
         this.$store.commit('playFile/play', false)
       }
@@ -190,10 +181,13 @@ export default {
     },
     ready () {
       this.duration = this.$refs.audio.duration
-      this.hDration = this.msToHms(this.duration * 1000)
     },
     changeTime (value) {
       this.$refs.audio.currentTime = value
+    },
+    onTimeUpdate () {
+      this.currentTime = this.$refs.audio.currentTime
+      this.timeLabel = this.msToHms(this.currentTime * 1000) + '/' + this.msToHms(this.duration * 1000)
     },
     previous () {
       this.$root.$emit('playlist-previous')
@@ -202,14 +196,14 @@ export default {
       this.$root.$emit('playlist-next')
     },
     setLoop () {
-      if (this.playlistLoop) {
+      if (this.player.playerlistLoop) {
         this.loop = false
       } else {
         this.loop = !this.loop
       }
     },
     setPlaylistPlay () {
-      this.$store.dispatch('playlist/playlistPlay', !this.playlistPlay)
+      this.$store.dispatch('playFile/playlistPlay', !this.player.playlistPlay)
     }
   }
 }

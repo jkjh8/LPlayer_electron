@@ -1,7 +1,13 @@
 export default function () {
   return {
-    currentFile: null,
-    source: '',
-    globalPlaying: false
+    player: {
+      file: null,
+      meta: null,
+      source: '',
+      playing: false,
+      globalPlaying: false,
+      playlistPlay: false,
+      playlistLoop: false
+    }
   }
 }
