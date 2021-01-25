@@ -3,17 +3,17 @@
     <q-card square>
       <!-- card title -->
       <q-card-section class="q-pa-none">
-        <div class="q-pa-sm row">
-          <spanß
-            style="display: flex; align-items: center;"
+        <div class="q-pa-md row">
+          <span
+            style="display: flex; align-items: center; font-size: 18px"
           >
             Playlist
-          </spanß>
+          </span>
           <q-space />
           <q-btn
             flat
             round
-            size="sm"
+            size="md"
             icon='playlist_add'
             @click="$refs.file.pickFiles()"
           >
@@ -27,7 +27,6 @@
           </q-btn>
         </div>
       </q-card-section>
-      <q-separator />
       <!-- playlist -->
       <q-card-section class="q-pa-none">
         <q-list bordered>
@@ -139,6 +138,7 @@ export default {
       if (this.files.length === 0) {
         this.idx = 0
         this.current = files[0]
+        this.$root.$emit('changePlayFile', this.current)
       }
       console.log(files)
       files.forEach(file => {

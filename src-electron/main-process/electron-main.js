@@ -1,6 +1,5 @@
 import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron'
 import mediainfo from 'node-mediainfo'
-
 const webApi = require('./web/webApi')
 
 webApi.listen(8082)
@@ -11,10 +10,6 @@ try {
   }
 } catch (_) { }
 
-/**
- * Set `__statics` path to static files in production;
- * The reason we are setting it here is that the path needs to be evaluated at runtime
- */
 if (process.env.PROD) {
   global.__statics = __dirname
 }
@@ -22,21 +17,13 @@ if (process.env.PROD) {
 let mainWindow
 
 function createWindow () {
-  /**
-   * Initial window options
-   */
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 600,
     useContentSize: true,
     webPreferences: {
-      // Change from /quasar.conf.js > electron > nodeIntegration;
-      // More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
       nodeIntegration: process.env.QUASAR_NODE_INTEGRATION,
-      nodeIntegrationInWorker: process.env.QUASAR_NODE_INTEGRATION,
-
-      // More info: /quasar-cli/developing-electron-apps/electron-preload-script
-      // preload: path.resolve(__dirname, 'electron-preload.js')
+      nodeIntegrationInWorker: process.env.QUASAR_NODE_INTEGRATION
     }
   })
 
@@ -59,6 +46,24 @@ app.on('activate', () => {
   if (mainWindow === null) {
     createWindow()
   }
+})
+
+import dgram from 'dgram'
+const mCast = dgram.createSocket('udp4')
+mCast.bind(5007, '0.0.0.0', () => {
+  mCast.setBroadcast(true)
+  mCast.setMulticastTTL(128)
+  mCast.addMembership('224.1.128.128')
+})
+
+mCast.on('listening', () => {
+  const address = mCast.address()
+  console.log(`UDP Multicat on ${address.address} : ${address.port}`)
+})
+
+mCast.on('message', (data, rinfo) => {
+  console.log(`Message from ${rinfo.address} : ${data.toString()}`)
+  mainWindow.webContents.send('status', data.toString())
 })
 
 ipcMain.on('reqMeta', async (event, filePath) => {

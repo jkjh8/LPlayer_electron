@@ -1,19 +1,60 @@
 <template>
   <div class="q-pa-md">
     <q-table
-      title="Treats"
-      :data="data"
+      grid
+      dense
+      title="Status"
+      :data="status"
       :columns="columns"
       row-key="name"
       selection="multiple"
       :selected.sync="selected"
       :filter="filter"
-      grid
       hide-header
-      @row-click="onRowClick"
+      :pagination.sync="pagination"
+      :rows-per-page-options="[0, 5, 10 ,20, 30]"
+      @update:selected="selectedCallback"
     >
       <template v-slot:top-right>
-        <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
+        <q-btn
+          flat
+          round
+          class="q-mx-xs"
+          icon="spellcheck"
+          @click="selAll"
+        >
+          <q-tooltip
+            anchor="top middle"
+            self="bottom middle"
+            :offset="[10, 10]"
+          >
+            Select All Zone
+          </q-tooltip>
+        </q-btn>
+        <q-btn
+          flat
+          round
+          class="q-mx-xs"
+          icon="loop"
+          @click="selNone"
+        >
+          <q-tooltip
+            anchor="top middle"
+            self="bottom middle"
+            :offset="[10, 10]"
+          >
+            Clear Select Zone
+          </q-tooltip>
+        </q-btn>
+        <q-input
+          class="q-mx-xs"
+          style="height: 20px"
+          borderless
+          dense
+          debounce="300"
+          v-model="filter"
+          placeholder="Search"
+        >
           <template v-slot:append>
             <q-icon name="search" />
           </template>
@@ -23,21 +64,35 @@
       <template v-slot:item="props">
         <div
           class="q-ma-sm grid-style-transition"
-          :style="props.selected ? 'transform: scale(0.95);' : ''"
+          :style="props.selected ? 'transform: scale(0.95)' : ''"
         >
-          <q-btn padding="0" @click="props.selected=!props.selected">
-            <q-card :class="props.selected ? 'bg-grey-4' : 'bg-white'">
-              <q-card-section>
-                <q-checkbox dense v-model="props.selected" :label="props.row.name" />
-              </q-card-section>
-              <q-separator />
-              <q-list dense>
-                <q-item v-for="col in props.cols.filter(col => col.name !== 'desc')" :key="col.name">
+          <q-btn
+            padding="0"
+            :disable="props.row.status ? true : false"
+            @click="props.selected=!props.selected">
+            <q-card
+              :class="props.selected ? 'bg-blue-grey-10 status' : 'bg-white status'"
+              :style="props.selected ? 'color: white' : 'color: black' "
+            >
+              <q-list>
+                <q-item>
+                  <!-- badge -->
+                  <q-badge
+                    v-if="props.row.status"
+                    color="red"
+                    floating
+                  >
+                    <q-icon name="block"></q-icon>
+                  </q-badge>
                   <q-item-section>
-                    <q-item-label>{{ col.label }}</q-item-label>
-                  </q-item-section>
-                  <q-item-section side>
-                    <q-item-label caption>{{ col.value }}</q-item-label>
+                    <q-item-label>
+                      <span>{{ props.row.name }}</span>
+                    </q-item-label>
+                    <q-item-label :style="props.selected ? 'color: white' : 'color: black'"
+                      caption
+                    >
+                      {{ statusConvert(props.row.status) }}
+                    </q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -45,142 +100,72 @@
           </q-btn>
         </div>
       </template>
-
     </q-table>
+    <!-- <q-fab v-show="scrollFab" color="secondary" icon="keyboard-arrow-up"></q-fab> -->
   </div>
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import { ipcRenderer } from 'electron'
+
 export default {
   data () {
     return {
       filter: '',
       selected: [],
+      pagination: {
+        page: 1,
+        rowsPerPage: 0
+      },
       columns: [
-        {
-          name: 'desc',
-          required: true,
-          label: 'Dessert (100g serving)',
-          align: 'left',
-          field: row => row.name,
-          format: val => `${val}`,
-          sortable: true
-        },
-        { name: 'calories', align: 'center', label: 'Calories', field: 'calories', sortable: true },
-        { name: 'fat', label: 'Fat (g)', field: 'fat', sortable: true },
-        { name: 'carbs', label: 'Carbs (g)', field: 'carbs' },
-        { name: 'protein', label: 'Protein (g)', field: 'protein' },
-        { name: 'sodium', label: 'Sodium (mg)', field: 'sodium' },
-        { name: 'calcium', label: 'Calcium (%)', field: 'calcium', sortable: true, sort: (a, b) => parseInt(a, 10) - parseInt(b, 10) },
-        { name: 'iron', label: 'Iron (%)', field: 'iron', sortable: true, sort: (a, b) => parseInt(a, 10) - parseInt(b, 10) }
-      ],
-      data: [
-        {
-          name: 'Frozen Yogurt',
-          calories: 159,
-          fat: 6.0,
-          carbs: 24,
-          protein: 4.0,
-          sodium: 87,
-          calcium: '14%',
-          iron: '1%'
-        },
-        {
-          name: 'Ice cream sandwich',
-          calories: 237,
-          fat: 9.0,
-          carbs: 37,
-          protein: 4.3,
-          sodium: 129,
-          calcium: '8%',
-          iron: '1%'
-        },
-        {
-          name: 'Eclair',
-          calories: 262,
-          fat: 16.0,
-          carbs: 23,
-          protein: 6.0,
-          sodium: 337,
-          calcium: '6%',
-          iron: '7%'
-        },
-        {
-          name: 'Cupcake',
-          calories: 305,
-          fat: 3.7,
-          carbs: 67,
-          protein: 4.3,
-          sodium: 413,
-          calcium: '3%',
-          iron: '8%'
-        },
-        {
-          name: 'Gingerbread',
-          calories: 356,
-          fat: 16.0,
-          carbs: 49,
-          protein: 3.9,
-          sodium: 327,
-          calcium: '7%',
-          iron: '16%'
-        },
-        {
-          name: 'Jelly bean',
-          calories: 375,
-          fat: 0.0,
-          carbs: 94,
-          protein: 0.0,
-          sodium: 50,
-          calcium: '0%',
-          iron: '0%'
-        },
-        {
-          name: 'Lollipop',
-          calories: 392,
-          fat: 0.2,
-          carbs: 98,
-          protein: 0,
-          sodium: 38,
-          calcium: '0%',
-          iron: '2%'
-        },
-        {
-          name: 'Honeycomb',
-          calories: 408,
-          fat: 3.2,
-          carbs: 87,
-          protein: 6.5,
-          sodium: 562,
-          calcium: '0%',
-          iron: '45%'
-        },
-        {
-          name: 'Donut',
-          calories: 452,
-          fat: 25.0,
-          carbs: 51,
-          protein: 4.9,
-          sodium: 326,
-          calcium: '2%',
-          iron: '22%'
-        },
-        {
-          name: 'KitKat',
-          calories: 518,
-          fat: 26.0,
-          carbs: 65,
-          protein: 7,
-          sodium: 54,
-          calcium: '12%',
-          iron: '6%'
-        }
+        { name: 'name', required: true, label: 'Name', field: 'name' },
+        { name: 'status', align: 'center', label: 'Status', field: 'status' }
       ]
     }
   },
+  computed: {
+    ...mapState({
+      status: state => state.status.status
+    }),
+    btnStatus (id) {
+      if (id) { return true } else { return false }
+    }
+  },
+  mounted () {
+    console.log(this.status)
+    ipcRenderer.on('status', (event, data) => {
+      this.parceData(data)
+    })
+  },
   methods: {
-    onRowClick (event, item) {
-      console.log(event, item)
+    selAll () {
+      this.selected = this.status
+    },
+    selNone () {
+      this.selected = []
+    },
+    statusConvert (status) {
+      if (status === 0) {
+        return 'Waiting'
+      } else if (status > 0 && status < 10) {
+        return `Booth ${status}`
+      } else if (status > 9 && status < 19) {
+        return `Player ${status - 9}`
+      }
+    },
+    parceData (data) {
+      if (data.startsWith('t:onair')) {
+        data = data.replace('t:onair,', '')
+        const arr = data.split(',')
+        arr.forEach(zone => {
+          zone = zone.trim()
+          this.$store.dispatch('status/chgStatus', zone)
+        })
+      }
+    },
+    selectedCallback (data) {
+      this.$store.commit('status/updateSelected', data)
     }
   }
 }
@@ -189,4 +174,8 @@ export default {
 <style lang="sass">
 .grid-style-transition
   transition: transform .28s, background-color .28s
+.status
+  width: 150px
+.q-checkbox
+  height: 5px
 </style>

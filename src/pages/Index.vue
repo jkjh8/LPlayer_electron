@@ -36,7 +36,12 @@ export default {
   },
   data () {
     return {
-      splitterModel: 0
+      splitterModel: 350
+    }
+  },
+  methods: {
+    scrollHandler (position) {
+      console.log(position)
     }
   }
 }

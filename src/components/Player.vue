@@ -76,8 +76,10 @@
         <q-btn v-else flat round color="white" icon="playlist_play" @click="setPlaylistPlay" />
         <q-btn v-if="playlistPlay" flat round icon="skip_previous" @click="previous" />
         <!-- play btn -->
-        <q-btn v-if="!played" flat round icon="play_arrow" @click="$refs.audio.play()" />
+        <q-btn v-if="!playing" flat round icon="play_arrow" @click="play()" />
         <q-btn v-else flat round icon="pause" @click="$refs.audio.pause()" />
+        <!-- stop btn -->
+        <q-btn flat round icon="stop" @click="stop"></q-btn>
 
         <q-btn v-if="playlistPlay" flat round icon="skip_next" @click="next" />
         <!-- loop button  -->
@@ -91,11 +93,11 @@
     <audio
       ref="audio"
       :loop='loop'
-      @playing="played=true"
+      @playing="playing=true"
       @ended="ended"
       @timeupdate="onTimeUpdate"
       @loadeddata="ready"
-      @pause="played=false"
+      @pause="playing=false"
     >
       <source :src="source">
     </audio>
@@ -107,19 +109,21 @@
 <script>
 import { ipcRenderer } from 'electron'
 import { mapState } from 'vuex'
-import { ms, h, m, s } from 'time-convert'
+import { Player } from '../mixins/player'
 
 export default {
   name: 'componetPlayer',
+  mixins: [Player],
   data () {
     return {
       currentTime: null,
       hCurrentTime: 0,
       duration: 100,
       hDration: 0,
-      played: false,
+      playing: false,
       meta: null,
-      loop: false
+      loop: false,
+      playAndZoneSel: false
     }
   },
   computed: {
@@ -128,41 +132,61 @@ export default {
       source: state => state.playFile.source,
       playlistLoop: state => state.playlist.playlistLoop,
       playlistPlay: state => state.playlist.playlistPlay,
-      currentPlaylist: state => state.playlist.currentPlaylist
+      currentPlaylist: state => state.playlist.currentPlaylist,
+      selected: state => state.status.selected,
+      status: state => state.status.status
     })
   },
   mounted () {
     this.$root.$on('changePlayFile', async (file) => {
-      this.$store.dispatch('playFile/updatePlayFile', file)
-      await this.loadFile()
-      this.played = false
+      this.chgPlayFile(file)
     })
     ipcRenderer.on('returnMeta', (event, fileMeta) => {
       this.meta = fileMeta
-      console.log(this.meta)
     })
   },
   methods: {
-    loadFile () {
-      this.$refs.audio.load()
-    },
     async open (data) {
-      this.$store.dispatch('playFile/updatePlayFile', data)
-      ipcRenderer.send('reqMeta', this.file.path)
-      this.$refs.audio.load()
-      this.played = false
+      await this.openFile(data)
+      await this.loadFile()
       this.$store.dispatch('playlist/playlistPlay', false)
     },
-    ended () {
-      console.log('end')
+    async ended () {
+      await this.$store.dispatch('playFile/updatePlayFile', null)
+      this.loadFile()
       this.currentTime = null
     },
-    onTimeUpdate () {
-      this.currentTime = this.$refs.audio.currentTime
-      this.hCurrentTime = this.msToHms(this.currentTime * 1000) + '/' + this.hDration
+    play () {
+      if (this.playAndZoneSel) {
+        this.$refs.audio.play()
+      } else {
+        this.$q.dialog({
+          title: 'Play',
+          message: `<div>Play ${this.file.name}</div><div>At ETC...</div>`,
+          html: true,
+          cancel: true
+        }).onOk(async () => {
+          this.playAndZoneSel = true
+          this.$refs.audio.play()
+        })
+      }
     },
-    playing (e) {
+    playingCallback (e) {
       console.log('playing', e)
+      this.playing = true
+    },
+    async stop () {
+      await this.$refs.audio.pause()
+      if (this.playAndZoneSel) {
+        this.$q.notify({
+          type: 'info',
+          message: `Player Stop Play ${this.file.name}.`
+        })
+        this.playAndZoneSel = false
+      }
+      setTimeout(() => {
+        this.currentTime = 0
+      }, 100)
     },
     ready () {
       this.duration = this.$refs.audio.duration
@@ -170,9 +194,6 @@ export default {
     },
     changeTime (value) {
       this.$refs.audio.currentTime = value
-    },
-    msToHms (time) {
-      return ms.to(h, m, s)(time).map(n => n < 10 ? '0' + n : n.toString()).join(':')
     },
     previous () {
       this.$root.$emit('playlist-previous')
