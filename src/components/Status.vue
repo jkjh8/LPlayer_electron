@@ -126,8 +126,8 @@ export default {
   },
   computed: {
     ...mapState({
-      status: state => state.status.status,
-      globalPlaying: state => state.playFile.globalPlaying
+      status: state => state.status.status.zones,
+      globalPlaying: state => state.playFile.player.globalPlaying
     }),
     btnStatus (id) {
       if (id) { return true } else { return false }
@@ -142,9 +142,11 @@ export default {
   methods: {
     selAll () {
       this.selected = this.status
+      this.selectedCallback(this.selected)
     },
     selNone () {
       this.selected = []
+      this.selectedCallback(this.selected)
     },
     statusConvert (status) {
       if (status === 0) {
@@ -157,7 +159,7 @@ export default {
     },
     parceData (data) {
       if (data.startsWith('t:onair')) {
-        data = data.replace('t:onair,', '')
+        data = data.replace(/t:onair,|,!/gi, '')
         const arr = data.split(',')
         arr.forEach(zone => {
           zone = zone.trim()
@@ -167,7 +169,6 @@ export default {
     },
     selectedCallback (data) {
       this.$store.commit('status/updateSelected', data)
-      console.log(this.globalPlaying)
     }
   }
 }

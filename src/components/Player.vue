@@ -125,10 +125,8 @@ export default {
   computed: {
     ...mapState({
       player: state => state.playFile.player,
-      currentPlaylist: state => state.playlist.currentPlaylist,
-      selected: state => state.status.selected,
-      status: state => state.status.status,
-      booth: state => state.status.booth
+      playlist: state => state.playlist.playlist,
+      status: state => state.status.status
     })
   },
   mounted () {
@@ -146,21 +144,35 @@ export default {
       this.$store.dispatch('playlist/playlistPlay', false)
     },
     async ended () {
+      const brocastZones = await this.selectZonesToString(false)
+      const result = await ipcRenderer.sendSync('udpsend', brocastZones.string)
+      console.log(result)
       await this.$store.dispatch('playFile/updatePlayFile', null)
       this.loadFile()
       this.currentTime = null
     },
-    play () {
-      console.log('play', this.player.globalPlaying)
+    async play () {
+      if (!this.player.file) {
+        return this.$refs.file.pickFiles()
+      }
+      const brocastZones = await this.selectZonesToString(true)
       if (this.player.globalPlaying) {
         this.$refs.audio.play()
       } else {
         this.$q.dialog({
           title: 'Play',
-          message: `<div>Play ${this.player.file.name}</div><div>At ETC...</div>`,
+          message: `
+            <div class="text-center">
+              <div>Play ${this.player.file.name}</div>
+              <div>At</div>
+              <div>${brocastZones.names}</div>
+            </div>  
+            `,
           html: true,
           cancel: true
         }).onOk(async () => {
+          const result = await ipcRenderer.sendSync('udpsend', brocastZones.string)
+          console.log(result)
           this.$store.commit('playFile/play', true)
           this.$refs.audio.play()
         })
@@ -169,14 +181,13 @@ export default {
     async stop () {
       await this.$refs.audio.pause()
       if (this.player.globalPlaying) {
-        this.$q.notify({
-          type: 'info',
-          message: `Player Stop Play ${this.player.file.name}.`
-        })
+        const brocastZones = await this.selectZonesToString(false)
+        const result = await ipcRenderer.sendSync('udpsend', brocastZones.string)
+        console.log(result)
         this.$store.commit('playFile/play', false)
       }
       setTimeout(() => {
-        this.currentTime = 0
+        this.$refs.audio.currentTime = 0
       }, 100)
     },
     ready () {

@@ -13,7 +13,8 @@
 
         <q-toolbar-title>
           <div class="text-weight-medium text-title">
-            PLAYER
+            <span>PLAYER</span>
+            <span class="q-mx-lg text-body2">Booth {{ status.booth }}</span>
           </div>
         </q-toolbar-title>
 
@@ -43,17 +44,34 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import { ipcRenderer, remote } from 'electron'
 import CompenntPlayer from '../components/Player'
+const dbStatus = remote.getGlobal('dbStatus')
 
 export default {
   name: 'MainLayout',
   components: {
     CompenntPlayer
   },
+  computed: {
+    ...mapState({
+      status: state => state.status.status
+    })
+  },
   data () {
     return {
       tab: 'player'
     }
+  },
+  async mounted () {
+    // await dbStatus.update({ id: 'booth' }, { $set: { value: 10 } })
+    const booth = await dbStatus.findOne({ id: 'booth' })
+    this.$store.commit('status/changeBooth', booth.value)
+    ipcRenderer.send('udpsendreset', this.status.booth)
+  },
+  beforeDestroy () {
+    ipcRenderer.send('udpsendreset', this.status.booth)
   },
   methods: {
     changeTab (value) {

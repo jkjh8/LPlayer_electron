@@ -96,7 +96,7 @@ export default {
   },
   computed: {
     ...mapState({
-      files: state => state.playlist.currentPlaylist
+      files: state => state.playlist.playlist
     })
   },
   mounted () {
