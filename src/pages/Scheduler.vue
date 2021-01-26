@@ -40,8 +40,8 @@
         </template>
       </q-table>
     </div>
-    <q-dialog v-model="add">
-      <addSchedule></addSchedule>
+    <q-dialog v-model="add" persistent transition-show="scale" transition-hide="scale">
+      <addSchedule @close="add=!add"></addSchedule>
     </q-dialog>
   </q-page>
 </template>
