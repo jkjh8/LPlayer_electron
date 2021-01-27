@@ -107,6 +107,7 @@
 <script>
 import { mapState } from 'vuex'
 import addSchedule from '../components/ScheduleDialog'
+import moment from 'moment'
 
 export default {
   name: 'PageScheduler',
@@ -150,6 +151,7 @@ export default {
         rowIndex: null,
         schedule: this.defaultSchedule
       }
+      this.scheduleData.schedule.time = moment().format('HH:mm')
       this.add = true
     },
     editSchedule (idx, data) {

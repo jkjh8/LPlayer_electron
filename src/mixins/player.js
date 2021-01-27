@@ -3,18 +3,20 @@ import { ms, h, m, s } from 'time-convert'
 
 export const Player = {
   methods: {
+    previous () {
+      this.$root.$emit('playlist-previous')
+    },
+    next () {
+      this.$root.$emit('playlist-next')
+    },
     async chgPlayFile (file) {
-      this.$store.dispatch('playFile/updatePlayFile', file)
-      await this.$refs.audio.load()
+      await this.$store.dispatch('playFile/updatePlayFile', file)
       this.$store.dispatch('playFile/playing', false)
+      this.$refs.audio.load()
     },
     async openFile (file) {
       await this.$store.dispatch('playFile/updatePlayFile', file)
       ipcRenderer.send('reqMeta', this.player.file.path)
-    },
-    async loadFile () {
-      await this.$refs.audio.load()
-      this.$store.dispatch('playFile/playing', false)
     },
     selectZonesToString (state) {
       const zones = []

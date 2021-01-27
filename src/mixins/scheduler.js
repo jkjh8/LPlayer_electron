@@ -19,13 +19,29 @@ export const Scheduler = {
     }, 1000)
   },
   watch: {
-    timeNow: (newVal, oldVal) => {
-      this.scheduleParcer(newVal)
+    timeNow: {
+      handler (newVal, oldVal) {
+        this.scheduleParcer(newVal)
+      },
+      immediate: true
     }
   },
   methods: {
     scheduleParcer (time) {
-      console.log(this.scheduleList)
+      const weekday = moment().day()
+      this.scheduleList.forEach(schedule => {
+        if (schedule.enable && schedule.time === time) {
+          if (schedule.mode === 'Weeks') {
+            schedule.weeks.forEach(week => {
+              if (week.value === weekday) {
+                console.log('week event', schedule)
+              }
+            })
+          } else {
+            console.log('nomal event', schedule)
+          }
+        }
+      })
     }
   }
 }

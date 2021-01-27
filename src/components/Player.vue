@@ -13,64 +13,7 @@
       />
     </div>
     <div class="q-ma-md row justify-center items-center content-center">
-      <div v-if="player.file" class="col-xs-12 col-sm-6">
-        <div v-if="player.playlistPlay">
-          Playlist Play
-        </div>
-        <div
-          v-if="player.meta && player.meta.media.track[0].Title"
-          class="text-weight-bold respText"
-        >
-          {{ player.meta.media.track[0].Title }}
-        </div>
-        <div
-          v-else-if="player.meta && player.meta.media.track[0].Track"
-          class="text-weight-bold respText"
-        >
-          {{ player.meta.media.track[0].Track }}
-        </div>
-        <div
-          v-else
-          class="text-weight-bold respText"
-        >
-          {{ player.file.name }}
-        </div>
-
-        <div
-          v-if="player.meta && player.meta.media.track[0].Director"
-         class="text-grey respText"
-        >
-          {{ player.meta.media.track[0].Director }}
-        </div>
-        <div
-          v-else-if="player.meta && player.meta.media.track[0].Album"
-          class="text-grey respText"
-        >
-          {{ player.meta.media.track[0].Album }}
-        </div>
-        <div
-          v-else-if="player.meta && player.meta.media.track[0].OriginalSourceForm_Name"
-          class="text-grey respText"
-        >
-          {{ player.meta.media.track[0].OriginalSourceForm_Name }}
-        </div>
-        <div
-          v-else-if="player.meta && player.meta.media.track[0].Performer"
-          class="text-grey respText"
-        >
-          {{ player.meta.media.track[0].Performer }}
-        </div>
-        <div
-          v-else
-          class="text-grey respText"
-        >
-          {{ player.file.name }}
-        </div>
-      </div>
-      <div v-else class="col-xs-12 col-sm-6">
-        <div class="text-weight-bold respText">None</div>
-        <div class="text-grey respText">None</div>
-      </div>
+      <PlayerNameTag />
       <div class="col-sx-12 col-sm-6 respBtns">
         <q-btn v-if="player.playlistPlay" color="red" flat round icon="playlist_play" @click="setPlaylistPlay" />
         <q-btn v-else flat round color="white" icon="playlist_play" @click="setPlaylistPlay" />
@@ -111,10 +54,12 @@ import { ipcRenderer } from 'electron'
 import { mapState } from 'vuex'
 import { Player } from '../mixins/player'
 import { Scheduler } from '../mixins/scheduler'
+import PlayerNameTag from './PlayerNameTag'
 
 export default {
   name: 'componetPlayer',
   mixins: [Player, Scheduler],
+  components: { PlayerNameTag },
   data () {
     return {
       currentTime: null,
@@ -141,8 +86,7 @@ export default {
   methods: {
     async open (data) {
       await this.openFile(data)
-      await this.loadFile()
-      this.$store.dispatch('playlist/playlistPlay', false)
+      this.$refs.audio.load()
     },
     async ended () {
       const brocastZones = await this.selectZonesToString(false)
@@ -197,12 +141,6 @@ export default {
     onTimeUpdate () {
       this.currentTime = this.$refs.audio.currentTime
       this.timeLabel = this.msToHms(this.currentTime * 1000) + '/' + this.msToHms(this.duration * 1000)
-    },
-    previous () {
-      this.$root.$emit('playlist-previous')
-    },
-    next () {
-      this.$root.$emit('playlist-next')
     },
     setLoop () {
       if (this.player.playerlistLoop) {
