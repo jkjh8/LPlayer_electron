@@ -4,7 +4,7 @@ import { ms, h, m, s } from 'time-convert'
 export const Player = {
   methods: {
     async chgPlayFile (file) {
-      await this.$store.dispatch('playFile/updatePlayFile', file)
+      this.$store.dispatch('playFile/updatePlayFile', file)
       await this.$refs.audio.load()
       this.$store.dispatch('playFile/playing', false)
     },

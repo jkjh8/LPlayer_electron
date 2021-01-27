@@ -110,10 +110,11 @@
 import { ipcRenderer } from 'electron'
 import { mapState } from 'vuex'
 import { Player } from '../mixins/player'
+import { Scheduler } from '../mixins/scheduler'
 
 export default {
   name: 'componetPlayer',
-  mixins: [Player],
+  mixins: [Player, Scheduler],
   data () {
     return {
       currentTime: null,
@@ -152,9 +153,6 @@ export default {
       this.currentTime = null
     },
     async play () {
-      if (!this.player.file) {
-        return this.$refs.file.pickFiles()
-      }
       const brocastZones = await this.selectZonesToString(true)
       if (this.player.globalPlaying) {
         this.$refs.audio.play()
@@ -187,7 +185,7 @@ export default {
         this.$store.commit('playFile/play', false)
       }
       setTimeout(() => {
-        this.$refs.audio.currentTime = 0
+        this.currentTime = 0
       }, 100)
     },
     ready () {

@@ -1,6 +1,12 @@
 export function chgStatus (state, payload) {
   const data = payload.split(':')
-  state.status.zones[data[0] - 1].status = Number(data[1])
+  if (data[0] < 57) {
+    state.status.zones[data[0] - 1].status = Number(data[1])
+  }
+}
+
+export function updateZones (state, payload) {
+  state.status.zones = payload
 }
 
 export function updateSelected (state, payload) {

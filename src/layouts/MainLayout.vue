@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header>
-      <q-toolbar class="bg-grey-9">
+      <q-toolbar class="bg-blue-grey-10">
         <q-btn
           flat
           dense
@@ -44,6 +44,7 @@
 </template>
 
 <script>
+import zones from '../Zone.json'
 import { mapState } from 'vuex'
 import { ipcRenderer, remote } from 'electron'
 import CompenntPlayer from '../components/Player'
@@ -67,6 +68,7 @@ export default {
   async mounted () {
     // await dbStatus.update({ id: 'booth' }, { $set: { value: 10 } })
     const booth = await dbStatus.findOne({ id: 'booth' })
+    this.$store.commit('status/updateZones', zones)
     this.$store.commit('status/changeBooth', booth.value)
     ipcRenderer.send('udpsendreset', this.status.booth)
   },
