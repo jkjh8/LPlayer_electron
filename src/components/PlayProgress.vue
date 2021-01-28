@@ -7,24 +7,26 @@
       Play Progress
     </q-card-section>
     <q-card-section class="flex flex-center">
-      <q-circular-progress
-        show-value
-        font-size="12px"
-        :value="currentTime"
-        :min="0"
-        :max="duration"
-        size="120px"
-        :thickness="0.22"
-        color="teal"
-        track-color="blue-grey-3"
-        class="q-ma-md"
-      >
-        {{ msToHms(currentTime * 1000) }}
-      </q-circular-progress>
+      <div>
+        Mode: {{ player.playlistPlay ? 'File' : 'Playlist' }}
+      </div>
+      <div class="fit row">
+        <q-slider
+          class="q-mx-md"
+          v-model="currentTime"
+          :max="duration"
+          snap
+          label
+          :label-value="timeLabel"
+          color="pink"
+          @input="$emit('changeTime', $event)"
+        />
+      </div>
     </q-card-section>
     <q-card-actions align="right">
-      <q-btn flat>Pause</q-btn>
-      <q-btn flat>Stop</q-btn>
+      <q-btn v-if="player.playing" flat @click="$emit('pause')">Pause</q-btn>
+      <q-btn v-else flat @click="$emit('play')">Play</q-btn>
+      <q-btn flat @click="stop">Stop</q-btn>
     </q-card-actions>
   </q-card>
 </template>
@@ -33,13 +35,17 @@
 import { ms, h, m, s } from 'time-convert'
 
 export default {
-  props: ['duration', 'currentTime'],
+  props: ['duration', 'currentTime', 'timeLabel', 'player'],
   data () {
     return {
       value: 81
     }
   },
   methods: {
+    stop () {
+      this.$emit('stop')
+      this.$emit('close')
+    },
     msToHms (time) {
       return ms.to(h, m, s)(time).map(n => n < 10 ? '0' + n : n.toString()).join(':')
     }

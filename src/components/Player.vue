@@ -64,6 +64,13 @@
       <PlayProgress
         :currentTime="currentTime"
         :duration="duration"
+        :timeLabel="timeLabel"
+        :player="player"
+        @changeTime="changeTime"
+        @pause="$refs.audio.pause()"
+        @play="play"
+        @stop="stop"
+        @close="progressDialog=!progressDialog"
       />
     </q-dialog>
     <audio
@@ -178,7 +185,7 @@ export default {
         this.$store.commit('playFile/play', false)
       }
       setTimeout(() => {
-        this.currentTime = 0
+        this.$refs.audio.currentTime = 0
       }, 100)
     },
     ready () {
