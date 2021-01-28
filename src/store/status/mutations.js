@@ -13,6 +13,10 @@ export function updateSelected (state, payload) {
   state.status.selected = payload
 }
 
+export function updatePlaylock (state, payload) {
+  state.status.playlock = payload
+}
+
 export function changeBooth (state, payload) {
   state.status.booth = payload
 }

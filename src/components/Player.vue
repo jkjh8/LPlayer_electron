@@ -14,28 +14,62 @@
     </div>
     <div class="q-ma-md row justify-center items-center content-center">
       <PlayerNameTag />
-      <div class="col-sx-12 col-sm-6 respBtns">
-        <q-btn v-if="player.playlistPlay" color="red" flat round icon="playlist_play" @click="setPlaylistPlay" />
-        <q-btn v-else flat round color="white" icon="playlist_play" @click="setPlaylistPlay" />
+      <div class="col-sx-12 col-sm-5 respBtns">
+        <q-btn v-if="player.playlistPlay" color="red" flat round icon="playlist_play" @click="setPlaylistPlay">
+          <q-tooltip>Play with Playlist</q-tooltip>
+        </q-btn>
+        <q-btn v-else flat round color="white" icon="playlist_play" @click="setPlaylistPlay">
+          <q-tooltip>Play with Playlist</q-tooltip>
+        </q-btn>
         <q-btn v-if="player.playlistPlay" flat round icon="skip_previous" @click="previous" />
         <!-- play btn -->
-        <q-btn v-if="!player.playing" flat round icon="play_arrow" @click="play()" />
+        <q-btn v-if="!player.playing" flat round icon="play_arrow" @click="play()">
+          <q-tooltip>Start the broadcast process</q-tooltip>
+        </q-btn>
         <q-btn v-else flat round icon="pause" @click="$refs.audio.pause()" />
         <!-- stop btn -->
-        <q-btn flat round icon="stop" @click="stop"></q-btn>
+        <q-btn flat round icon="stop" @click="stop">
+          <q-tooltip>Stop the broadcast process</q-tooltip>
+        </q-btn>
 
         <q-btn v-if="player.playlistPlay" flat round icon="skip_next" @click="next" />
         <!-- loop button  -->
-        <q-btn v-if="loop" color="yellow" flat round icon="loop" @click="setLoop" />
-        <q-btn v-else color="white" flat round icon="loop" @click="setLoop" />
-
-        <q-btn flat round icon="eject" @click="$refs.file.pickFiles()" />
+        <q-btn v-if="loop" color="yellow" flat round icon="loop" @click="setLoop">
+          <q-tooltip>One file is played repeatedly</q-tooltip>
+        </q-btn>
+        <q-btn v-else color="white" flat round icon="loop" @click="setLoop">
+          <q-tooltip>One file is played repeatedly</q-tooltip>
+        </q-btn>
+        <q-btn flat round icon="eject" @click="$refs.file.pickFiles()">
+          <q-tooltip>Open file for play</q-tooltip>
+        </q-btn>
+      </div>
+      <div class="row no-wrap col-sx-12 col-sm-3 respBtns">
+        <q-separator class="q-mx-md" vertical />
+        <q-btn v-if="!mute" flat round icon="volume_up" @click="setMute"></q-btn>
+        <q-btn v-else color="red" flat round icon="volume_off" @click="setMute"></q-btn>
+        <q-slider
+          class="q-mx-sm"
+          style="max-width: 150px"
+          v-model="volume"
+          :min="0"
+          :max="100"
+          label
+          color="teal"
+          @input="changeVol"
+        />
       </div>
     </div>
-
+    <q-dialog v-model="progressDialog">
+      <PlayProgress
+        :currentTime="currentTime"
+        :duration="duration"
+      />
+    </q-dialog>
     <audio
       ref="audio"
       :loop='loop'
+      :muted="mute"
       @playing="$store.dispatch('playFile/playing', true)"
       @ended="ended"
       @timeupdate="onTimeUpdate"
@@ -55,17 +89,21 @@ import { mapState } from 'vuex'
 import { Player } from '../mixins/player'
 import { Scheduler } from '../mixins/scheduler'
 import PlayerNameTag from './PlayerNameTag'
+import PlayProgress from './PlayProgress'
 
 export default {
   name: 'componetPlayer',
   mixins: [Player, Scheduler],
-  components: { PlayerNameTag },
+  components: { PlayerNameTag, PlayProgress },
   data () {
     return {
       currentTime: null,
       timeLabel: 0,
       duration: 100,
-      loop: false
+      loop: false,
+      volume: 0,
+      mute: false,
+      progressDialog: false
     }
   },
   computed: {
@@ -79,9 +117,13 @@ export default {
     this.$root.$on('changePlayFile', async (file) => {
       this.chgPlayFile(file)
     })
+    this.$root.$on('change-audiooutput', (current) => {
+      this.$refs.audio.setSinkId(current.deviceId)
+    })
     ipcRenderer.on('returnMeta', (event, meta) => {
       this.$store.commit('playFile/updateMeta', meta)
     })
+    this.volume = this.$refs.audio.volume * 100
   },
   methods: {
     async open (data) {
@@ -104,17 +146,24 @@ export default {
         this.$q.dialog({
           title: 'Play',
           message: `
-            <div class="text-center">
-              <div>Play ${this.player.file.name}</div>
-              <div>At</div>
-              <div>${brocastZones.names}</div>
+            <div class="q-mx-md">
+              <div class="q-my-sm">
+                <span class="text-weight-bold">Play File : </span>
+                <span>${this.player.file.name}</span>
+              </div>
+              <div class="q-my-sm">
+                <span class="text-weight-bold">Zones : </span>
+                <span>${brocastZones.names}</span>
+              </div>
             </div>  
             `,
           html: true,
           cancel: true
         }).onOk(async () => {
-          const result = await ipcRenderer.sendSync('udpsend', brocastZones.string)
-          console.log(result)
+          await ipcRenderer.sendSync('udpsend', brocastZones.string)
+          if (this.status.playlock) {
+            this.progressDialog = true
+          }
           this.$store.commit('playFile/play', true)
           this.$refs.audio.play()
         })
@@ -148,6 +197,13 @@ export default {
       } else {
         this.loop = !this.loop
       }
+    },
+    setMute () {
+      this.mute = !this.mute
+      this.$refs.audio.muted = this.mute
+    },
+    changeVol (value) {
+      this.$refs.audio.volume = value / 100
     },
     setPlaylistPlay () {
       this.$store.dispatch('playFile/playlistPlay', !this.player.playlistPlay)

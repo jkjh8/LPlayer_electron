@@ -1,5 +1,5 @@
 <template>
-  <div class="col-xs-12 col-sm-6 q-px-md">
+  <div class="col-xs-12 col-sm-4 q-px-md">
     <div v-if="player.file">
       <div v-if="player.playlistPlay">
         Playlist Play

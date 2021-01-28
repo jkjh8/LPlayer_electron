@@ -14,7 +14,7 @@
         <q-toolbar-title>
           <div class="text-weight-medium text-title">
             <span>PLAYER</span>
-            <span class="q-mx-lg text-body2">Booth {{ status.booth }}</span>
+            <span class="q-mx-lg text-body2">Booth {{ status.booth - 9 }}</span>
           </div>
         </q-toolbar-title>
 
@@ -40,6 +40,13 @@
     <q-footer elevated class="bg-grey-8 text-white">
       <CompenntPlayer />
     </q-footer>
+
+    <q-dialog
+      v-model="startupDialog"
+      persistent
+    >
+      <Startup @close="startupDialog=!startupDialog" />
+    </q-dialog>
   </q-layout>
 </template>
 
@@ -48,13 +55,13 @@ import zones from '../Zone.json'
 import { mapState } from 'vuex'
 import { ipcRenderer, remote } from 'electron'
 import CompenntPlayer from '../components/Player'
+import Startup from '../components/Start'
 const dbStatus = remote.getGlobal('dbStatus')
+const dbScheduler = remote.getGlobal('dbScheduler')
 
 export default {
   name: 'MainLayout',
-  components: {
-    CompenntPlayer
-  },
+  components: { CompenntPlayer, Startup },
   computed: {
     ...mapState({
       status: state => state.status.status
@@ -62,15 +69,23 @@ export default {
   },
   data () {
     return {
-      tab: 'player'
+      tab: 'player',
+      startupDialog: false
     }
   },
   async mounted () {
     // await dbStatus.update({ id: 'booth' }, { $set: { value: 10 } })
     const booth = await dbStatus.findOne({ id: 'booth' })
     this.$store.commit('status/updateZones', zones)
-    this.$store.commit('status/changeBooth', booth.value)
+    await this.$store.commit('status/changeBooth', booth.value)
     ipcRenderer.send('udpsendreset', this.status.booth)
+    this.startupDialog = true
+    const schedule = await dbScheduler.find().sort({ createAt: 1 })
+    this.$store.commit('scheduler/updateSchedule', schedule)
+    const result = await dbStatus.findOne({ id: 'playlock' })
+    if (result) {
+      this.$store.commit('status/updatePlaylock', result.value)
+    }
   },
   beforeDestroy () {
     ipcRenderer.send('udpsendreset', this.status.booth)

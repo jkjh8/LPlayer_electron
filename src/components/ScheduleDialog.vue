@@ -1,84 +1,92 @@
 <template>
   <q-card style="width: 50%">
-    <q-form
-      @submit="onSubmit"
-      @reset="onReset"
-    >
-      <q-card-section>
-        <div class="text-h6">{{ scheduleData.name }}</div>
-      </q-card-section>
-      <q-card-section>
-        <div class="q-mx-md" style="max-width: 90%">
-          <q-input
-            v-model="schedule.name"
-            label="Schedule Name"
-            hint="Type event name"
-            placeholder="event"
-          />
-          <q-file
-            v-model="schedule.file"
-            label="Select File"
-            hint="Select audio file"
-            lazy-rules
-            :rules="[val => !!val || 'Please select some file']"
-          />
-          <q-select
-            v-model="schedule.zones"
-            :options="zones"
-            option-label="name"
-            multiple
-            use-chips
-            stack-label
-            lazy-rules
-            :rules="[val => val.length > 0 || 'Please select zones']"
-            popup-content-style="height: 400px"
-            label="Zones"
-          >
-          </q-select>
-          <q-select v-model="schedule.mode" :options="modeOptions" label="Repeat Mode" />
-          <q-select
-            v-if="schedule.mode === 'Weeks'"
-            v-model="schedule.weeks"
-            multiple
-            use-chips
-            stack-label
-            :options="weekOptions"
-            lazy-rules
-            :rules="[val => val.length > 0 || 'Please select weeldays']"
-            label="Weeks"
-          />
-          <q-input v-model="schedule.time" mask="time" :rules="['time']" label="Time">
-            <template v-slot:append>
-              <q-icon name="access_time" class="q-py-none cursor-pointer">
-                <q-popup-proxy transition-show="scale" transition-hide="scale">
-                  <q-time v-model="schedule.time">
-                    <div class="row items-center justify-end">
-                      <q-btn v-close-popup label="Close" color="primary" flat />
-                    </div>
-                  </q-time>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
-        </div>
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn flat label="Submit" type="submit"></q-btn>
-        <q-btn flat label="Reset" type="reset"></q-btn>
-        <q-btn flat label="Cancel" type="reset" @click="close"></q-btn>
-      </q-card-actions>
-    </q-form>
+    <q-card-section>
+      <div class="text-h6">{{ mode }}</div>
+    </q-card-section>
+    <q-card-section>
+      <div class="q-mx-md" style="max-width: 90%">
+        <q-input
+          v-model="data.name"
+          label="Schedule Name"
+          hint="Type event name"
+          placeholder="event"
+        />
+        <q-file
+          v-model="data.file"
+          label="Select File"
+          hint="Select audio file"
+        />
+        <q-select
+          v-model="data.zones"
+          :options="zones"
+          option-label="name"
+          multiple
+          use-chips
+          stack-label
+          popup-content-style="height: 400px"
+          label="Zones"
+        >
+        </q-select>
+        <q-select v-model="data.mode" :options="modeOptions" label="Repeat Mode" />
+        <q-select
+          v-if="data.mode === 'Weeks'"
+          v-model="data.weeks"
+          multiple
+          use-chips
+          stack-label
+          :options="weekOptions"
+          label="Weeks"
+        />
+        <q-input v-model="data.time" mask="time" :rules="['time']" label="Time">
+          <template v-slot:append>
+            <q-icon name="access_time" class="q-py-none cursor-pointer">
+              <q-popup-proxy transition-show="scale" transition-hide="scale">
+                <q-time v-model="data.time">
+                  <div class="row items-center justify-end">
+                    <q-btn v-close-popup label="Close" color="primary" flat />
+                  </div>
+                </q-time>
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
+      </div>
+    </q-card-section>
+    <q-card-actions align="right">
+      <q-btn flat label="Submit" @click="onSubmit"></q-btn>
+      <q-btn flat label="Reset" @click="onReset"></q-btn>
+      <q-btn flat label="Cancel" @click="close"></q-btn>
+    </q-card-actions>
   </q-card>
 </template>
 
 <script>
 import { mapState } from 'vuex'
+import { remote } from 'electron'
+import moment from 'moment'
+const dbScheduler = remote.getGlobal('dbScheduler')
 
 export default {
-  props: ['name', 'scheduleData'],
+  props: {
+    mode: { type: String, default: 'Add Schedule' },
+    schedule: {
+      type: Object,
+      default: () => {
+        return {
+          name: '',
+          file: null,
+          zones: [],
+          mode: 'Once',
+          weeks: [],
+          time: moment().format('HH:mm'),
+          enable: true
+        }
+      }
+    }
+  },
   data () {
     return {
-      schedule: Object.assign({}, this.scheduleData.schedule),
+      data: Object.assign({}, this.schedule),
       modeOptions: ['Once', 'Every Day', 'Weeks'],
       weekOptions: [
         { label: 'Sun', value: 0 },
@@ -97,34 +105,28 @@ export default {
     })
   },
   methods: {
-    onSubmit () {
-      console.log(this.scheduleData)
-      if (this.scheduleData.mode === 'new') {
-        console.log('new', this.schedule)
-        this.$store.commit('scheduler/addSchedule', this.schedule)
+    async onSubmit () {
+      if (this.mode === 'Add Schedule') {
+        await dbScheduler.insert(this.data)
       } else {
-        console.log('edit', this.schedule)
-        this.$store.dispatch('scheduler/editSchedule', {
-          idx: this.scheduleData.rowIndex,
-          schedule: this.schedule
-        })
+        await dbScheduler.update({ _id: this.schedule._id }, this.data)
       }
-      this.onReset()
-      this.$emit('close')
+      this.$emit('refresh')
+      this.close()
     },
     onReset () {
-      this.schedule = {
+      this.data = {
         name: 'event',
         file: null,
         zones: [],
         mode: 'Once',
         weeks: [],
-        time: '12:00',
+        time: moment().format('HH:mm'),
         enable: true
       }
     },
-    close () {
-      this.onReset()
+    async close () {
+      await this.$emit('onReset')
       this.$emit('close')
     }
   }

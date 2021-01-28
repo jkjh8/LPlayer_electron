@@ -72,7 +72,7 @@
           <q-td :props="props">
             <q-toggle
               :value="props.row.enable"
-              @input="$store.commit('scheduler/enableUpdate', props.rowIndex)"
+              @input="editEnable(props.row)"
             />
           </q-td>
         </template>
@@ -85,29 +85,36 @@
               round
               size="sm"
               icon="create"
-              @click="editSchedule(props.rowIndex, props.row)"
+              @click="editSchedule(props.row)"
             />
             <q-btn
               flat
               round
               size="sm"
               icon="delete"
-              @click="$store.dispatch('scheduler/delSchedule', props.row)"
+              @click="delSchedule(props.row)"
             />
           </q-td>
         </template>
       </q-table>
     </div>
     <q-dialog v-model="add" persistent transition-show="scale" transition-hide="scale">
-      <addSchedule :scheduleData="scheduleData" @close="add=!add" ></addSchedule>
+      <addSchedule
+        :mode="mode"
+        :schedule="schedule"
+        @refresh="updateList"
+        @close="add=!add"
+        @onReset="onReset"
+      />
     </q-dialog>
   </q-page>
 </template>
 
 <script>
-import { mapState } from 'vuex'
 import addSchedule from '../components/ScheduleDialog'
 import moment from 'moment'
+import { remote } from 'electron'
+const dbScheduler = remote.getGlobal('dbScheduler')
 
 export default {
   name: 'PageScheduler',
@@ -126,42 +133,37 @@ export default {
         { name: 'actions', align: 'center', label: 'Actions', field: 'actions' }
       ],
       add: false,
-      scheduleData: null,
-      defaultSchedule: {
-        name: '',
-        file: null,
-        zones: [],
-        mode: 'Once',
-        weeks: [],
-        time: '12:00',
-        enable: true
-      }
+      schedule: null,
+      scheduleList: [],
+      mode: 'Add Schedule'
     }
   },
-  computed: {
-    ...mapState({
-      scheduleList: state => state.scheduler.scheduleList
-    })
+  async mounted () {
+    this.updateList()
   },
   methods: {
+    async updateList () {
+      const result = await dbScheduler.find().sort({ createdAt: 1 })
+      this.scheduleList = result
+      this.$store.commit('scheduler/updateSchedule', result)
+    },
+    async editEnable (item) {
+      const enable = !item.enable
+      dbScheduler.update({ _id: item._id }, { $set: { enable: enable } }, { upsert: true })
+      this.updateList()
+    },
     addSchedule () {
-      this.scheduleData = {
-        mode: 'new',
-        name: 'Add Schdeule',
-        rowIndex: null,
-        schedule: this.defaultSchedule
-      }
-      this.scheduleData.schedule.time = moment().format('HH:mm')
+      this.mode = 'Add Schedule'
       this.add = true
     },
-    editSchedule (idx, data) {
-      this.scheduleData = {
-        mode: 'edit',
-        name: 'Edit Schdeule',
-        rowIndex: idx,
-        schedule: data
-      }
+    editSchedule (data) {
+      this.mode = 'Edit Schedule'
+      this.schedule = data
       this.add = true
+    },
+    async delSchedule (item) {
+      await dbScheduler.remove({ _id: item._id })
+      this.updateList()
     },
     zonesNameString (zones) {
       const zoneNameArray = []
@@ -179,6 +181,17 @@ export default {
         return toStr.join(', ')
       } else {
         return mode
+      }
+    },
+    onReset () {
+      this.schedule = {
+        name: 'event',
+        file: null,
+        zones: [],
+        mode: 'Once',
+        weeks: [],
+        time: moment().format('HH:mm'),
+        enable: true
       }
     }
   }

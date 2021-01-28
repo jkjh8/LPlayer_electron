@@ -2,6 +2,10 @@ export function addSchedule (state, payload) {
   state.scheduleList.push(payload)
 }
 
+export function updateSchedule (state, payload) {
+  state.scheduleList = payload
+}
+
 export function delSchedule (state, payload) {
   state.scheduleList.splice(payload, 1)
 }

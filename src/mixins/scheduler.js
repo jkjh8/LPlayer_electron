@@ -28,20 +28,23 @@ export const Scheduler = {
   },
   methods: {
     scheduleParcer (time) {
-      const weekday = moment().day()
-      this.scheduleList.forEach(schedule => {
-        if (schedule.enable && schedule.time === time) {
-          if (schedule.mode === 'Weeks') {
-            schedule.weeks.forEach(week => {
-              if (week.value === weekday) {
-                console.log('week event', schedule)
-              }
-            })
-          } else {
-            console.log('nomal event', schedule)
+      if (this.scheduleList) {
+        const weekday = moment().day()
+        this.scheduleList.forEach(schedule => {
+          console.log(schedule)
+          if (schedule.enable && schedule.time === time) {
+            if (schedule.mode === 'Weeks') {
+              schedule.weeks.forEach(week => {
+                if (week.value === weekday) {
+                  console.log('week event', schedule)
+                }
+              })
+            } else {
+              console.log('nomal event', schedule)
+            }
           }
-        }
-      })
+        })
+      }
     }
   }
 }

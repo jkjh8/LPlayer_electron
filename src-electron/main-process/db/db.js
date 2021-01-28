@@ -7,7 +7,7 @@ const dbStatus = Datastore.create({
   autoload: true
 })
 
-const dbSchedulerPath = `${app.getPath('userData')}/LPlayer/status.db`
+const dbSchedulerPath = `${app.getPath('userData')}/LPlayer/scheduler.db`
 const dbScheduler = Datastore.create({
   filename: dbSchedulerPath,
   timestampData: true,
