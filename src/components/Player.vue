@@ -26,7 +26,7 @@
         <q-btn v-if="!player.playing" flat round icon="play_arrow" @click="play()">
           <q-tooltip>Start the broadcast process</q-tooltip>
         </q-btn>
-        <q-btn v-else flat round icon="pause" @click="$refs.audio.pause()" />
+        <q-btn v-else flat round color="green" icon="pause" @click="$refs.audio.pause()" />
         <!-- stop btn -->
         <q-btn flat round icon="stop" @click="stop">
           <q-tooltip>Stop the broadcast process</q-tooltip>

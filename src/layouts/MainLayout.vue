@@ -15,6 +15,7 @@
           <div class="text-weight-medium text-title">
             <span>PLAYER</span>
             <span class="q-mx-lg text-body2">Booth {{ status.booth - 9 }}</span>
+            <span class="q-mx-lg text-body2">{{ time }}</span>
           </div>
         </q-toolbar-title>
 
@@ -52,6 +53,7 @@
 
 <script>
 import zones from '../Zone.json'
+import moment from 'moment'
 import { mapState } from 'vuex'
 import { ipcRenderer, remote } from 'electron'
 import CompenntPlayer from '../components/Player'
@@ -70,15 +72,16 @@ export default {
   data () {
     return {
       tab: 'player',
-      startupDialog: false
+      startupDialog: false,
+      time: ''
     }
   },
   async mounted () {
     // await dbStatus.update({ id: 'booth' }, { $set: { value: 10 } })
     const booth = await dbStatus.findOne({ id: 'booth' })
-    this.$store.commit('status/updateZones', zones)
+    await this.$store.commit('status/updateZones', zones)
     await this.$store.commit('status/changeBooth', booth.value)
-    ipcRenderer.send('udpsendreset', this.status.booth)
+    await ipcRenderer.send('udpsendreset', this.status.booth)
     this.startupDialog = true
     const schedule = await dbScheduler.find().sort({ createAt: 1 })
     this.$store.commit('scheduler/updateSchedule', schedule)
@@ -86,6 +89,7 @@ export default {
     if (result) {
       this.$store.commit('status/updatePlaylock', result.value)
     }
+    this.clock()
   },
   beforeDestroy () {
     ipcRenderer.send('udpsendreset', this.status.booth)
@@ -93,6 +97,11 @@ export default {
   methods: {
     changeTab (value) {
       this.$router.push(value)
+    },
+    clock () {
+      setInterval(() => {
+        this.time = moment().format('YYYY/MM/D HH:mm:ss')
+      }, 1000)
     }
   }
 }

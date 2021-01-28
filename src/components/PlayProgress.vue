@@ -4,6 +4,18 @@
     style="min-width: 400px"
   >
     <q-card-section style="background: gray; color: white">
+      <q-circular-progress
+        v-show="player.playing"
+        indeterminate
+        size="25px"
+        :thickness="0.4"
+        font-size="10px"
+        color="lime"
+        track-color="grey-3"
+        center-color="grey-8"
+        class="q-mx-sm"
+      >
+      </q-circular-progress>
       Play Progress
     </q-card-section>
     <q-card-section class="flex flex-center">
