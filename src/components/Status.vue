@@ -81,8 +81,10 @@
                     v-if="props.row.status"
                     color="red"
                     floating
+                    transparent
+                    style="border-radius: 15px;"
                   >
-                    <q-icon name="block"></q-icon>
+                    <q-icon style="padding: 3px 0 3px 0;" size="16px" name="block"></q-icon>
                   </q-badge>
                   <q-item-section>
                     <q-item-label>

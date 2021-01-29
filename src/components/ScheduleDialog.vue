@@ -106,6 +106,18 @@ export default {
   },
   methods: {
     async onSubmit () {
+      const result = await dbScheduler.findOne({ time: this.data.time })
+      if (result) {
+        console.log(result)
+        if (result.name === this.data.name || result.file === this.data.file || result.zones === this.data.zones) {
+          console.log('pass')
+        } else {
+          return this.$q.notify({
+            type: 'negative',
+            message: `There is already a broadcast reservation at ${this.data.time}`
+          })
+        }
+      }
       if (this.mode === 'Add Schedule') {
         await dbScheduler.insert(this.data)
       } else {

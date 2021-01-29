@@ -12,6 +12,7 @@ export const Player = {
     async chgPlayFile (file) {
       await this.$store.dispatch('playFile/updatePlayFile', file)
       this.$store.dispatch('playFile/playing', false)
+      ipcRenderer.send('reqMeta', this.player.file.path)
       this.$refs.audio.load()
     },
     async openFile (file) {

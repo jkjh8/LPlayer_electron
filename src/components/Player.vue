@@ -138,17 +138,19 @@ export default {
       this.$refs.audio.load()
     },
     async ended () {
-      const brocastZones = await this.selectZonesToString(false)
-      const result = await ipcRenderer.sendSync('udpsend', brocastZones.string)
-      console.log(result)
-      await this.$store.dispatch('playFile/updatePlayFile', null)
-      this.loadFile()
-      this.currentTime = null
+      this.stop()
     },
     async play () {
       const brocastZones = await this.selectZonesToString(true)
       if (this.player.globalPlaying) {
         this.$refs.audio.play()
+      } else if (!this.player.file) {
+        this.$refs.file.pickFiles()
+      } else if (this.status.selected.length === 0) {
+        this.$q.dialog({
+          title: 'Alert',
+          message: 'Please select broadcast zones'
+        })
       } else {
         this.$q.dialog({
           title: 'Play',
@@ -178,15 +180,14 @@ export default {
     },
     async stop () {
       await this.$refs.audio.pause()
+      this.progressDialog = false
       if (this.player.globalPlaying) {
         const brocastZones = await this.selectZonesToString(false)
         const result = await ipcRenderer.sendSync('udpsend', brocastZones.string)
         console.log(result)
         this.$store.commit('playFile/play', false)
       }
-      setTimeout(() => {
-        this.$refs.audio.currentTime = 0
-      }, 100)
+      this.$refs.audio.currentTime = 0
     },
     ready () {
       this.duration = this.$refs.audio.duration

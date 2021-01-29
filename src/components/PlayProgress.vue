@@ -20,7 +20,7 @@
     </q-card-section>
     <q-card-section class="flex flex-center">
       <div>
-        Mode: {{ player.playlistPlay ? 'File' : 'Playlist' }}
+        Mode: {{ player.playlistPlay ? 'Playlist' : 'File' }}
       </div>
       <div class="fit row">
         <q-slider

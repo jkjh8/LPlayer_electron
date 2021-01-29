@@ -10,10 +10,10 @@
       >
         <!-- HEADER -->
         <template v-slot:top-right>
+          <!-- add schedule -->
           <q-btn
             flat
             round
-            class="q-mx-xs"
             icon="playlist_add"
             @click="addSchedule"
           >
@@ -23,6 +23,22 @@
               :offset="[10, 10]"
             >
               Add Playlist
+            </q-tooltip>
+          </q-btn>
+          <!-- remove all schedule -->
+          <q-btn
+            flat
+            round
+            class="q-mr-md"
+            icon="delete"
+            @click="removeAllSchedule"
+          >
+            <q-tooltip
+              anchor="top middle"
+              self="bottom middle"
+              :offset="[10, 10]"
+            >
+              Remove all schedule
             </q-tooltip>
           </q-btn>
           <q-input
@@ -123,13 +139,13 @@ export default {
     return {
       filter: '',
       columns: [
-        { name: 'nom', align: 'center', label: 'No.' },
-        { name: 'name', align: 'center', label: 'Name', field: 'name' },
-        { name: 'file', align: 'center', label: 'File', field: 'file' },
-        { name: 'zones', align: 'center', label: 'Zones', field: 'zones' },
-        { name: 'mode', align: 'center', label: 'Repeat Mode', field: 'mode' },
-        { name: 'time', align: 'center', label: 'Time', field: 'time' },
-        { name: 'enable', align: 'center', label: 'Enable', field: 'enable' },
+        { name: 'nom', align: 'center', label: 'No.', sortable: true },
+        { name: 'name', align: 'center', label: 'Name', field: 'name', sortable: true },
+        { name: 'file', align: 'center', label: 'File', field: 'file', sortable: true },
+        { name: 'zones', align: 'center', label: 'Zones', field: 'zones', sortable: true },
+        { name: 'mode', align: 'center', label: 'Repeat Mode', field: 'mode', sortable: true },
+        { name: 'time', align: 'center', label: 'Time', field: 'time', sortable: true },
+        { name: 'enable', align: 'center', label: 'Enable', field: 'enable', sortable: true },
         { name: 'actions', align: 'center', label: 'Actions', field: 'actions' }
       ],
       add: false,
@@ -139,6 +155,7 @@ export default {
     }
   },
   async mounted () {
+    // dbScheduler.remove({}, { multi: true })
     this.updateList()
   },
   methods: {
@@ -155,6 +172,17 @@ export default {
     addSchedule () {
       this.mode = 'Add Schedule'
       this.add = true
+    },
+    removeAllSchedule () {
+      this.$q.dialog({
+        title: 'Warning',
+        message: 'Do you want to remove all schedule?',
+        cancel: true,
+        persistent: true
+      }).onOk(async () => {
+        await dbScheduler.remove({}, { multi: true })
+        this.updateList()
+      })
     },
     editSchedule (data) {
       this.mode = 'Edit Schedule'
