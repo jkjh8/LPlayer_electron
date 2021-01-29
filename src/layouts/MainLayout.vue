@@ -39,7 +39,7 @@
     </q-page-container>
 
     <q-footer elevated class="bg-grey-8 text-white">
-      <CompenntPlayer />
+      <Player />
     </q-footer>
 
     <q-dialog
@@ -56,14 +56,14 @@ import zones from '../Zone.json'
 import moment from 'moment'
 import { mapState } from 'vuex'
 import { ipcRenderer, remote } from 'electron'
-import CompenntPlayer from '../components/Player'
+import Player from '../components/Player/Player'
 import Startup from '../components/Start'
 const dbStatus = remote.getGlobal('dbStatus')
 const dbScheduler = remote.getGlobal('dbScheduler')
 
 export default {
   name: 'MainLayout',
-  components: { CompenntPlayer, Startup },
+  components: { Player, Startup },
   computed: {
     ...mapState({
       status: state => state.status.status

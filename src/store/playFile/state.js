@@ -6,8 +6,10 @@ export default function () {
       source: '',
       playing: false,
       globalPlaying: false,
-      playlistPlay: false,
-      playlistLoop: false
+      playMode: 'File',
+      playlistLoop: false,
+      duration: 0,
+      brocastZone: null
     }
   }
 }

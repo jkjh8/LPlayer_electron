@@ -1,29 +1,18 @@
 <template>
   <div>
-    <div class="row">
-      <q-slider
-        class="q-mx-md"
-        v-model="currentTime"
-        :max="duration"
-        snap
-        label
-        :label-value="timeLabel"
-        color="pink"
-        @input="changeTime"
-      />
-    </div>
+    <TimeSlider />
     <div class="q-ma-md row justify-center items-center content-center">
       <PlayerNameTag />
       <div class="col-sx-12 col-sm-5 respBtns">
-        <q-btn v-if="player.playlistPlay" color="red" flat round icon="playlist_play" @click="setPlaylistPlay">
+        <q-btn v-if="player.playMode==='Playlist'" color="red" flat round icon="playlist_play" @click="setPlaylistPlay">
           <q-tooltip>Play with Playlist</q-tooltip>
         </q-btn>
         <q-btn v-else flat round color="white" icon="playlist_play" @click="setPlaylistPlay">
           <q-tooltip>Play with Playlist</q-tooltip>
         </q-btn>
-        <q-btn v-if="player.playlistPlay" flat round icon="skip_previous" @click="previous" />
+        <q-btn v-if="player.playMode==='Playlist'" flat round icon="skip_previous" @click="$root.$emit('playlist-previous')" />
         <!-- play btn -->
-        <q-btn v-if="!player.playing" flat round icon="play_arrow" @click="play()">
+        <q-btn v-if="!player.playing" flat round icon="play_arrow" @click="playConfirm()">
           <q-tooltip>Start the broadcast process</q-tooltip>
         </q-btn>
         <q-btn v-else flat round color="green" icon="pause" @click="$refs.audio.pause()" />
@@ -32,7 +21,7 @@
           <q-tooltip>Stop the broadcast process</q-tooltip>
         </q-btn>
 
-        <q-btn v-if="player.playlistPlay" flat round icon="skip_next" @click="next" />
+        <q-btn v-if="player.playMode==='Playlist'" flat round icon="skip_next" @click="$root.$emit('playlist-next')" />
         <!-- loop button  -->
         <q-btn v-if="loop" color="yellow" flat round icon="loop" @click="setLoop">
           <q-tooltip>One file is played repeatedly</q-tooltip>
@@ -62,15 +51,17 @@
     </div>
     <q-dialog v-model="progressDialog">
       <PlayProgress
-        :currentTime="currentTime"
-        :duration="duration"
-        :timeLabel="timeLabel"
         :player="player"
-        @changeTime="changeTime"
         @pause="$refs.audio.pause()"
         @play="play"
         @stop="stop"
         @close="progressDialog=!progressDialog"
+      />
+    </q-dialog>
+    <q-dialog v-model="playconfirmDialog">
+      <PlayConfirm
+        @play="play"
+        @close="playconfirmDialog=!playconfirmDialog"
       />
     </q-dialog>
     <audio
@@ -79,8 +70,8 @@
       :muted="mute"
       @playing="$store.dispatch('playFile/playing', true)"
       @ended="ended"
-      @timeupdate="onTimeUpdate"
-      @loadeddata="ready"
+      @timeupdate="$root.$emit('updatePlayTime', $refs.audio.currentTime)"
+      @loadeddata="$store.commit('playFile/updateDuration', $refs.audio.duration)"
       @pause="$store.dispatch('playFile/playing', false)"
     >
       <source :src="player.source">
@@ -93,24 +84,25 @@
 <script>
 import { ipcRenderer } from 'electron'
 import { mapState } from 'vuex'
-import { Player } from '../mixins/player'
-import { Scheduler } from '../mixins/scheduler'
+import { BroadcastZone } from '../../mixins/broadcastZone'
+import { msToHms } from '../../mixins/msToHMS'
+import { Scheduler } from '../../mixins/scheduler'
+import TimeSlider from './timeSlider'
 import PlayerNameTag from './PlayerNameTag'
 import PlayProgress from './PlayProgress'
+import PlayConfirm from './PlayConfirm'
 
 export default {
   name: 'componetPlayer',
-  mixins: [Player, Scheduler],
-  components: { PlayerNameTag, PlayProgress },
+  mixins: [BroadcastZone, Scheduler, msToHms],
+  components: { TimeSlider, PlayerNameTag, PlayProgress, PlayConfirm },
   data () {
     return {
-      currentTime: null,
-      timeLabel: 0,
-      duration: 100,
       loop: false,
       volume: 0,
       mute: false,
-      progressDialog: false
+      progressDialog: false,
+      playconfirmDialog: false
     }
   },
   computed: {
@@ -124,6 +116,9 @@ export default {
     this.$root.$on('changePlayFile', async (file) => {
       this.chgPlayFile(file)
     })
+    this.$root.$on('changePlayTime', (value) => {
+      this.$refs.audio.currentTime = value
+    })
     this.$root.$on('change-audiooutput', (current) => {
       this.$refs.audio.setSinkId(current.deviceId)
     })
@@ -134,70 +129,56 @@ export default {
   },
   methods: {
     async open (data) {
+      await this.$store.dispatch('playFile/playing', false)
       await this.openFile(data)
-      this.$refs.audio.load()
+      await this.$refs.audio.load()
     },
     async ended () {
       this.stop()
     },
-    async play () {
-      const brocastZones = await this.selectZonesToString(true)
+    async playConfirm () {
+      await this.selectZonesToString(true)
       if (this.player.globalPlaying) {
         this.$refs.audio.play()
       } else if (!this.player.file) {
         this.$refs.file.pickFiles()
       } else if (this.status.selected.length === 0) {
-        this.$q.dialog({
-          title: 'Alert',
-          message: 'Please select broadcast zones'
+        this.$q.notify({
+          type: 'negative',
+          position: 'top',
+          message: 'Please select broadcast zones!'
+        })
+      } else if (this.player.broadcastZone.overlap.length > 0) {
+        this.$q.notify({
+          type: 'negative',
+          position: 'top',
+          message: `Please check zones ${this.player.broadcastZone.overlap.join(',')}`
         })
       } else {
-        this.$q.dialog({
-          title: 'Play',
-          message: `
-            <div class="q-mx-md">
-              <div class="q-my-sm">
-                <span class="text-weight-bold">Play File : </span>
-                <span>${this.player.file.name}</span>
-              </div>
-              <div class="q-my-sm">
-                <span class="text-weight-bold">Zones : </span>
-                <span>${brocastZones.names}</span>
-              </div>
-            </div>  
-            `,
-          html: true,
-          cancel: true
-        }).onOk(async () => {
-          await ipcRenderer.sendSync('udpsend', brocastZones.string)
-          if (this.status.playlock) {
-            this.progressDialog = true
-          }
-          this.$store.commit('playFile/play', true)
-          this.$refs.audio.play()
-        })
+        this.playconfirmDialog = true
       }
+    },
+    async play () {
+      await ipcRenderer.sendSync('udpsend', this.player.broadcastZone.idx)
+      if (this.status.playlock) {
+        this.progressDialog = true
+      }
+      this.$store.commit('playFile/play', true)
+      this.$refs.audio.play()
     },
     async stop () {
       await this.$refs.audio.pause()
       this.progressDialog = false
       if (this.player.globalPlaying) {
-        const brocastZones = await this.selectZonesToString(false)
-        const result = await ipcRenderer.sendSync('udpsend', brocastZones.string)
+        await this.selectZonesToString(false)
+        const result = await ipcRenderer.sendSync('udpsend', this.player.broadcastZone.idx)
         console.log(result)
         this.$store.commit('playFile/play', false)
       }
       this.$refs.audio.currentTime = 0
     },
-    ready () {
-      this.duration = this.$refs.audio.duration
-    },
     changeTime (value) {
       this.$refs.audio.currentTime = value
-    },
-    onTimeUpdate () {
-      this.currentTime = this.$refs.audio.currentTime
-      this.timeLabel = this.msToHms(this.currentTime * 1000) + '/' + this.msToHms(this.duration * 1000)
     },
     setLoop () {
       if (this.player.playerlistLoop) {
@@ -214,7 +195,31 @@ export default {
       this.$refs.audio.volume = value / 100
     },
     setPlaylistPlay () {
-      this.$store.dispatch('playFile/playlistPlay', !this.player.playlistPlay)
+      console.log('playlist')
+      if (this.player.playMode === 'Playlist') {
+        this.$store.commit('playFile/playMode', 'File')
+      } else {
+        this.$store.commit('playFile/playMode', 'Playlist')
+      }
+    },
+    previous () {
+      this.$root.$emit('playlist-previous')
+    },
+    next () {
+      this.$root.$emit('playlist-next')
+    },
+    chgPlayFile (file) {
+      this.$store.dispatch('playFile/updatePlayFile', file)
+      this.$store.dispatch('playFile/playing', false)
+      ipcRenderer.send('reqMeta', this.player.file.path)
+      this.$refs.audio.load()
+      if (this.player.globalPlaying) {
+        this.$refs.audio.play()
+      }
+    },
+    async openFile (file) {
+      await this.$store.dispatch('playFile/updatePlayFile', file)
+      ipcRenderer.send('reqMeta', this.player.file.path)
     }
   }
 }

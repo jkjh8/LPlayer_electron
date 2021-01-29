@@ -11,10 +11,18 @@ export function playing (state, payload) {
   state.player.playing = payload
 }
 
-export function playlistPlay (state, payload) {
-  state.player.playlistPlay = payload
+export function playMode (state, payload) {
+  state.player.playMode = payload
 }
 
 export function updateMeta (state, payload) {
   state.player.meta = payload
+}
+
+export function updateDuration (state, payload) {
+  state.player.duration = payload
+}
+
+export function updateBroadcastZone (state, payload) {
+  state.player.broadcastZone = payload
 }

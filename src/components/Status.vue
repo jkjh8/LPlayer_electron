@@ -4,7 +4,7 @@
       grid
       dense
       title="Status"
-      :data="status"
+      :data="status.zones"
       :columns="columns"
       row-key="name"
       selection="multiple"
@@ -88,12 +88,12 @@
                   </q-badge>
                   <q-item-section>
                     <q-item-label>
-                      <span>{{ props.row.name }}</span>
+                      <span class="text-body2 text-weight-bold">{{ props.row.name }}</span>
                     </q-item-label>
                     <q-item-label :style="props.selected ? 'color: white' : 'color: black'"
                       caption
                     >
-                      {{ statusConvert(props.row.status) }}
+                      <span class="text-caption text-weight-light">{{ statusConvert(props.row.status) }}</span>
                     </q-item-label>
                   </q-item-section>
                 </q-item>
@@ -128,7 +128,7 @@ export default {
   },
   computed: {
     ...mapState({
-      status: state => state.status.status.zones,
+      status: state => state.status.status,
       globalPlaying: state => state.playFile.player.globalPlaying
     }),
     btnStatus (id) {
@@ -140,10 +140,11 @@ export default {
     ipcRenderer.on('status', (event, data) => {
       this.parceData(data)
     })
+    this.selected = this.status.selected
   },
   methods: {
     selAll () {
-      this.selected = this.status
+      this.selected = this.status.zones
       this.selectedCallback(this.selected)
     },
     selNone () {
