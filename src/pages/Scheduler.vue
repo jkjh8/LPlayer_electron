@@ -87,6 +87,9 @@
         <template v-slot:body-cell-enable="props">
           <q-td :props="props">
             <q-toggle
+              checked-icon="check"
+              color="green"
+              unchecked-icon="clear"
               :value="props.row.enable"
               @input="editEnable(props.row)"
             />

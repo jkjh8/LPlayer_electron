@@ -1,52 +1,36 @@
 <template>
   <div>
     <TimeSlider />
-    <div class="q-ma-md row justify-center items-center content-center">
+    <div class="q-ma-md row self-end">
       <PlayerNameTag />
-      <div class="col-sx-12 col-sm-5 respBtns">
-        <q-btn v-if="player.playMode==='Playlist'" color="red" flat round icon="playlist_play" @click="setPlaylistPlay">
+      <div class="row no-wrap col-sx-12 col-sm-5 respBtns">
+        <q-btn
+          v-if="player.playMode==='Playlist'"
+          color="red"
+          flat
+          round
+          icon="playlist_play"
+          @click="$store.commit('playFile/playMode', 'File')"
+        >
           <q-tooltip>Play with Playlist</q-tooltip>
         </q-btn>
-        <q-btn v-else flat round color="white" icon="playlist_play" @click="setPlaylistPlay">
+        <q-btn
+          v-else
+          flat
+          round
+          color="white"
+          icon="playlist_play"
+          @click="$store.commit('playFile/playMode', 'Playlist')"
+        >
           <q-tooltip>Play with Playlist</q-tooltip>
         </q-btn>
-        <q-btn v-if="player.playMode==='Playlist'" flat round icon="skip_previous" @click="$root.$emit('playlist-previous')" />
-        <!-- play btn -->
-        <q-btn v-if="!player.playing" flat round icon="play_arrow" @click="playConfirm()">
-          <q-tooltip>Start the broadcast process</q-tooltip>
-        </q-btn>
-        <q-btn v-else flat round color="green" icon="pause" @click="$refs.audio.pause()" />
-        <!-- stop btn -->
-        <q-btn flat round icon="stop" @click="stop">
-          <q-tooltip>Stop the broadcast process</q-tooltip>
-        </q-btn>
-
-        <q-btn v-if="player.playMode==='Playlist'" flat round icon="skip_next" @click="$root.$emit('playlist-next')" />
-        <!-- loop button  -->
-        <q-btn v-if="loop" color="yellow" flat round icon="loop" @click="setLoop">
-          <q-tooltip>One file is played repeatedly</q-tooltip>
-        </q-btn>
-        <q-btn v-else color="white" flat round icon="loop" @click="setLoop">
-          <q-tooltip>One file is played repeatedly</q-tooltip>
-        </q-btn>
+        <PlayBtns />
         <q-btn flat round icon="eject" @click="$refs.file.pickFiles()">
           <q-tooltip>Open file for play</q-tooltip>
         </q-btn>
       </div>
       <div class="row no-wrap col-sx-12 col-sm-3 respBtns">
-        <q-separator class="q-mx-md" vertical />
-        <q-btn v-if="!mute" flat round icon="volume_up" @click="setMute"></q-btn>
-        <q-btn v-else color="red" flat round icon="volume_off" @click="setMute"></q-btn>
-        <q-slider
-          class="q-mx-sm"
-          style="max-width: 150px"
-          v-model="volume"
-          :min="0"
-          :max="100"
-          label
-          color="teal"
-          @input="changeVol"
-        />
+        <Volume />
       </div>
     </div>
     <q-dialog v-model="progressDialog">
@@ -66,8 +50,8 @@
     </q-dialog>
     <audio
       ref="audio"
-      :loop='loop'
-      :muted="mute"
+      :loop="player.loop"
+      :muted="player.mute"
       @playing="$store.dispatch('playFile/playing', true)"
       @ended="ended"
       @timeupdate="$root.$emit('updatePlayTime', $refs.audio.currentTime)"
@@ -91,16 +75,17 @@ import TimeSlider from './timeSlider'
 import PlayerNameTag from './PlayerNameTag'
 import PlayProgress from './PlayProgress'
 import PlayConfirm from './PlayConfirm'
+import PlayBtns from './PlayBtns'
+import Volume from './Volume'
 
 export default {
   name: 'componetPlayer',
   mixins: [BroadcastZone, Scheduler, msToHms],
-  components: { TimeSlider, PlayerNameTag, PlayProgress, PlayConfirm },
+  components: { TimeSlider, PlayerNameTag, PlayProgress, PlayConfirm, PlayBtns, Volume },
   data () {
     return {
       loop: false,
       volume: 0,
-      mute: false,
       progressDialog: false,
       playconfirmDialog: false
     }
@@ -109,12 +94,31 @@ export default {
     ...mapState({
       player: state => state.playFile.player,
       playlist: state => state.playlist.playlist,
+      idx: state => state.playlist.playlistIdx,
       status: state => state.status.status
     })
   },
   mounted () {
     this.$root.$on('changePlayFile', async (file) => {
       this.chgPlayFile(file)
+    })
+    this.$root.$on('pause', () => {
+      this.$refs.audio.pause()
+    })
+    this.$root.$on('play', () => {
+      this.playConfirm()
+    })
+    this.$root.$on('stop', () => {
+      this.stop()
+    })
+    this.$root.$on('mute', async () => {
+      this.$store.commit('playFile/updateMute')
+      this.$refs.audio.muted = this.player.mute
+    })
+    this.$root.$on('vol', (value) => {
+      this.$store.commit('playFile/updateVol', value)
+      this.$refs.audio.volume = value / 100
+      console.log(this.player.mute)
     })
     this.$root.$on('changePlayTime', (value) => {
       this.$refs.audio.currentTime = value
@@ -134,7 +138,17 @@ export default {
       await this.$refs.audio.load()
     },
     async ended () {
-      this.stop()
+      if (this.player.playMode === 'Playlist') {
+        if (this.playlist.length - 1 === this.idx) {
+          this.stop()
+        } else {
+          this.$root.$emit('playlist-next')
+        }
+      } else if (this.player.playMode === 'Schedule') {
+        this.stop()
+      }
+      // this.stop()
+      console.log('ended')
     },
     async playConfirm () {
       await this.selectZonesToString(true)
@@ -194,14 +208,6 @@ export default {
     changeVol (value) {
       this.$refs.audio.volume = value / 100
     },
-    setPlaylistPlay () {
-      console.log('playlist')
-      if (this.player.playMode === 'Playlist') {
-        this.$store.commit('playFile/playMode', 'File')
-      } else {
-        this.$store.commit('playFile/playMode', 'Playlist')
-      }
-    },
     previous () {
       this.$root.$emit('playlist-previous')
     },
@@ -231,12 +237,12 @@ export default {
     text-align: center;
   }
   .respBtns {
-    text-align: center;
+    justify-content: center;
   }
 }
 @media (min-width: 600px) {
   .respBtns {
-    text-align: right;
+    justify-content: flex-end;
   }
 }
 </style>

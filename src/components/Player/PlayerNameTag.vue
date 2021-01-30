@@ -1,9 +1,14 @@
 <template>
-  <div class="col-xs-12 col-sm-4 q-px-md">
+  <div class="row no-wrap col-xs-12 col-sm-4 q-px-md">
+    <div
+      v-show="player.playMode === 'Playlist'"
+      class="q-mt-xs q-mx-md text-overline respText"
+      style="line-height: 110%; text-align: center; color: #5F9EA0;"
+    >
+      <q-icon name="playlist_play"></q-icon>
+      Playlist<br>Play
+    </div>
     <div v-if="player.file">
-      <div v-if="player.playlistPlay">
-        Playlist Play
-      </div>
       <div
         v-if="player.meta && player.meta.media.track[0].Title"
         class="text-weight-bold respText"
@@ -72,3 +77,17 @@ export default {
   }
 }
 </script>
+
+<style>
+@media (max-width: 599px) {
+  .respText {
+    text-align: center;
+    white-space: nowrap;
+  }
+}
+@media (min-width: 599px) {
+  .respText {
+    white-space: nowrap;
+  }
+}
+</style>

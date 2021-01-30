@@ -1,5 +1,6 @@
 export default function () {
   return {
-    playlist: []
+    playlist: [],
+    playlistIdx: 0
   }
 }

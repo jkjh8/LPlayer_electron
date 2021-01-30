@@ -50,13 +50,23 @@ export const Scheduler = {
       }
     },
     async schedulePlay () {
-      await this.$store.commit('status/updateSelected', this.schedule.zones)
-      const brocastZones = await this.selectZonesToString(true)
-      await this.chgPlayFile(this.schedule.file)
-      await ipcRenderer.sendSync('udpsend', brocastZones.string)
-      this.progressDialog = true
-      this.$store.commit('playFile/play', true)
-      this.$refs.audio.play()
+      await this.selectZonesToString(true)
+      if (this.player.broadcastZone.overlap.length > 0) {
+        this.$q.notify({
+          type: 'negative',
+          position: 'top',
+          message: `Please check zones ${this.player.broadcastZone.overlap.join(',')}`
+        })
+      } else {
+        await this.$store.commit('playFile/playMode', 'Schedule')
+        await this.$store.commit('status/updateSelected', this.schedule.zones)
+        await this.selectZonesToString(true)
+        await this.chgPlayFile(this.schedule.file)
+        await ipcRenderer.sendSync('udpsend', this.player.broadcastZone.idx)
+        this.progressDialog = true
+        this.$store.commit('playFile/play', true)
+        this.$refs.audio.play()
+      }
     }
   }
 }

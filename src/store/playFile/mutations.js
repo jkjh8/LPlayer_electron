@@ -26,3 +26,15 @@ export function updateDuration (state, payload) {
 export function updateBroadcastZone (state, payload) {
   state.player.broadcastZone = payload
 }
+
+export function updateMute (state) {
+  state.player.mute = !state.player.mute
+}
+
+export function updateVol (state, payload) {
+  state.player.volume = payload
+}
+
+export function updateLoop (state) {
+  state.player.loop = !state.player.loop
+}

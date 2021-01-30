@@ -27,9 +27,10 @@
           </q-btn>
         </div>
       </q-card-section>
+      <q-separator inset />
       <!-- playlist -->
       <q-card-section class="q-pa-none">
-        <q-list bordered>
+        <q-list>
           <q-item
             v-for="(file, idx) in files"
             :key="idx"
@@ -88,7 +89,6 @@ import { mapState } from 'vuex'
 export default {
   data () {
     return {
-      idx: 150,
       current: null,
       draggingFab: false,
       fabPos: [18, 18]
@@ -96,26 +96,27 @@ export default {
   },
   computed: {
     ...mapState({
-      files: state => state.playlist.playlist
+      files: state => state.playlist.playlist,
+      idx: state => state.playlist.playlistIdx
     })
   },
   mounted () {
     this.$root.$on('playlist-next', () => {
       if (this.idx < this.files.length - 1) {
-        this.idx = this.idx + 1
+        this.$store.commit('playlist/updatePlaylistIdx', this.idx + 1)
         this.current = this.files[this.idx]
       } else {
-        this.idx = 0
+        this.$store.commit('playlist/updatePlaylistIdx', 0)
         this.current = this.files[0]
       }
       this.$root.$emit('changePlayFile', this.current)
     })
     this.$root.$on('playlist-previous', () => {
       if (this.idx === 0) {
-        this.idx = this.files.length - 1
+        this.$store.commit('playlist/updatePlaylistIdx', this.files.length - 1)
         this.current = this.files[this.idx]
       } else {
-        this.idx = this.idx - 1
+        this.$store.commit('playlist/updatePlaylistIdx', this.idx - 1)
         this.current = this.files[this.idx]
       }
       this.$root.$emit('changePlayFile', this.current)
@@ -136,7 +137,7 @@ export default {
     },
     addPlaylistFile (files) {
       if (this.files.length === 0) {
-        this.idx = 0
+        this.$store.commit('playlist/updatePlaylistIdx', 0)
         this.current = files[0]
         this.$root.$emit('changePlayFile', this.current)
       }
@@ -146,7 +147,7 @@ export default {
       })
     },
     async selectPlaylist (file, idx) {
-      this.idx = idx
+      this.$store.commit('playlist/updatePlaylistIdx', idx)
       this.current = file
       this.$root.$emit('changePlayFile', file)
     }
