@@ -1,7 +1,8 @@
 import { setInterval } from 'core-js'
 import { mapState } from 'vuex'
+import { remote, ipcRenderer } from 'electron'
 import moment from 'moment'
-import { ipcRenderer } from 'electron'
+const dbScheduler = remote.getGlobal('dbScheduler')
 
 export const Scheduler = {
   computed: {
@@ -50,6 +51,9 @@ export const Scheduler = {
       }
     },
     async schedulePlay () {
+      if (this.schedule.mode === 'Once') {
+        this.updateScheduleEnable()
+      }
       await this.selectZonesToString(true)
       if (this.player.broadcastZone.overlap.length > 0) {
         this.$q.notify({
@@ -67,6 +71,11 @@ export const Scheduler = {
         this.$store.commit('playFile/play', true)
         this.$refs.audio.play()
       }
+    },
+    async updateScheduleEnable () {
+      const enable = !this.schedule.enable
+      await dbScheduler.update({ _id: this.schedule._id }, { $set: { enable: enable } }, { upsert: true })
+      this.$root.$emit('refreshPlaylist')
     }
   }
 }

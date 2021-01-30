@@ -159,6 +159,9 @@ export default {
   },
   async mounted () {
     // dbScheduler.remove({}, { multi: true })
+    this.$root.$on('refreshPlaylist', () => {
+      this.updateList()
+    })
     this.updateList()
   },
   methods: {

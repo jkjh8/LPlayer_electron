@@ -5,22 +5,11 @@
       <PlayerNameTag />
       <div class="row no-wrap col-sx-12 col-sm-5 respBtns">
         <q-btn
-          v-if="player.playMode==='Playlist'"
-          color="red"
+          :color="player.playMode==='Playlist' ? 'red' : ''"
           flat
           round
           icon="playlist_play"
-          @click="$store.commit('playFile/playMode', 'File')"
-        >
-          <q-tooltip>Play with Playlist</q-tooltip>
-        </q-btn>
-        <q-btn
-          v-else
-          flat
-          round
-          color="white"
-          icon="playlist_play"
-          @click="$store.commit('playFile/playMode', 'Playlist')"
+          @click="setPlayMode"
         >
           <q-tooltip>Play with Playlist</q-tooltip>
         </q-btn>
@@ -102,11 +91,12 @@ export default {
     this.$root.$on('changePlayFile', async (file) => {
       this.chgPlayFile(file)
     })
-    this.$root.$on('pause', () => {
-      this.$refs.audio.pause()
-    })
-    this.$root.$on('play', () => {
-      this.playConfirm()
+    this.$root.$on('play', async () => {
+      if (!this.player.playing) {
+        this.playConfirm()
+      } else {
+        this.$refs.audio.pause()
+      }
     })
     this.$root.$on('stop', () => {
       this.stop()
@@ -132,23 +122,17 @@ export default {
     this.volume = this.$refs.audio.volume * 100
   },
   methods: {
+    setPlayMode () {
+      if (this.player.playMode === 'Playlist') {
+        this.$store.commit('playFile/playMode', 'File')
+      } else {
+        this.$store.commit('playFile/playMode', 'Playlist')
+      }
+    },
     async open (data) {
       await this.$store.dispatch('playFile/playing', false)
       await this.openFile(data)
       await this.$refs.audio.load()
-    },
-    async ended () {
-      if (this.player.playMode === 'Playlist') {
-        if (this.playlist.length - 1 === this.idx) {
-          this.stop()
-        } else {
-          this.$root.$emit('playlist-next')
-        }
-      } else if (this.player.playMode === 'Schedule') {
-        this.stop()
-      }
-      // this.stop()
-      console.log('ended')
     },
     async playConfirm () {
       await this.selectZonesToString(true)
@@ -191,34 +175,30 @@ export default {
       }
       this.$refs.audio.currentTime = 0
     },
+    async ended () {
+      if (this.player.playMode === 'Playlist') {
+        if (this.playlist.length - 1 === this.idx) {
+          if (this.player.playlistLoop) {
+            return this.$root.$emit('playlist-next')
+          }
+          this.stop()
+        } else {
+          this.$root.$emit('playlist-next')
+        }
+      } else if (this.player.playMode === 'Schedule') {
+        this.stop()
+      }
+      // this.stop()
+      console.log('ended')
+    },
     changeTime (value) {
       this.$refs.audio.currentTime = value
     },
-    setLoop () {
-      if (this.player.playerlistLoop) {
-        this.loop = false
-      } else {
-        this.loop = !this.loop
-      }
-    },
-    setMute () {
-      this.mute = !this.mute
-      this.$refs.audio.muted = this.mute
-    },
-    changeVol (value) {
-      this.$refs.audio.volume = value / 100
-    },
-    previous () {
-      this.$root.$emit('playlist-previous')
-    },
-    next () {
-      this.$root.$emit('playlist-next')
-    },
-    chgPlayFile (file) {
-      this.$store.dispatch('playFile/updatePlayFile', file)
-      this.$store.dispatch('playFile/playing', false)
-      ipcRenderer.send('reqMeta', this.player.file.path)
-      this.$refs.audio.load()
+    async chgPlayFile (file) {
+      await this.$store.dispatch('playFile/updatePlayFile', file)
+      await this.$store.dispatch('playFile/playing', false)
+      await ipcRenderer.send('reqMeta', this.player.file.path)
+      await this.$refs.audio.load()
       if (this.player.globalPlaying) {
         this.$refs.audio.play()
       }

@@ -38,3 +38,7 @@ export function updateVol (state, payload) {
 export function updateLoop (state) {
   state.player.loop = !state.player.loop
 }
+
+export function updatePlaylistLoop (state) {
+  state.player.playlistLoop = !state.player.playlistLoop
+}
