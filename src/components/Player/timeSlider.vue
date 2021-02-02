@@ -9,6 +9,7 @@
       :label-value="`${msToHms(time * 1000)}/${msToHms(player.duration * 1000)}`"
       color="pink"
       @input="changeTime"
+      @pan="slideClickEvent"
     />
   </div>
 </template>
@@ -31,13 +32,16 @@ export default {
   },
   data () {
     return {
-      time: '',
+      time: 0,
       timeLabel: '0/0'
     }
   },
   methods: {
     changeTime (value) {
       this.$root.$emit('changePlayTime', value)
+    },
+    slideClickEvent (phase) {
+      console.log(phase)
     }
   }
 }
