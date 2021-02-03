@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron'
+import { app, BrowserWindow, nativeTheme, ipcMain, Manu, Menu } from 'electron'
 import mediainfo from 'node-mediainfo'
 require('./db/db')
 
@@ -26,8 +26,8 @@ let mainWindow
 
 function createWindow () {
   mainWindow = new BrowserWindow({
-    width: 1600,
-    height: 600,
+    width: 1200,
+    height: 800,
     useContentSize: true,
     webPreferences: {
       nodeIntegration: process.env.QUASAR_NODE_INTEGRATION,
@@ -41,6 +41,7 @@ function createWindow () {
   mainWindow.on('closed', () => {
     mainWindow = null
   })
+  Menu.setApplicationMenu(null)
 }
 
 app.on('ready', createWindow)

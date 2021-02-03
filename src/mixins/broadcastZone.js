@@ -23,7 +23,39 @@ export const BroadcastZone = {
           overlap: overlapZone
         })
       } else {
-        this.$store.commit('playFile/updateBroadcastZone', null)
+        this.$store.commit('playFile/updateBroadcastZone', {
+          idx: '',
+          name: '',
+          selected: [],
+          overlap: []
+        })
+      }
+    },
+    calZoneSelect (state, selected) {
+      console.log(selected)
+      // const zones = []
+      // if (selected.length > 0) {
+      //   selected.forEach(item => {
+      //     if (state === 'play') {
+      //       zones.push({ name: item.name, idx: `${item.id}:${this.status.booth}` })
+      //     } else {
+      //       zones.push({ name: item.name, idx: `${item.id}:0` })
+      //     }
+      //   })
+      // }
+      // return zones
+    },
+    checkOverlapZones (zones) {
+      const overlap = []
+      if (overlap.length) {
+        zones.forEach(zone => {
+          if (this.status.zones[zone.id - 1].status !== 0) {
+            overlap.push(zone)
+          }
+        })
+        return overlap
+      } else {
+        return null
       }
     }
   }

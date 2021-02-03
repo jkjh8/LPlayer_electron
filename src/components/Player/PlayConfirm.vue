@@ -25,7 +25,7 @@
         </div>
         <div>
           <span class="text-h6 text-weight-bold">Zones </span>
-          <span class="text-body2 text-weight-light">{{ player.broadcastZone.name }}</span>
+          <span class="text-body2 text-weight-light">{{ calZone() }}</span>
         </div>
       </div>
     </q-card-section>
@@ -41,13 +41,17 @@ import { mapState } from 'vuex'
 export default {
   computed: {
     ...mapState({
-      player: state => state.playFile.player
+      player: state => state.playFile.player,
+      status: state => state.status.status
     })
   },
   methods: {
     play () {
       this.$emit('close')
       this.$emit('play')
+    },
+    calZone () {
+      return this.status.selected.map(e => e.name).join(',')
     }
   }
 }

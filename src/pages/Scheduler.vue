@@ -7,6 +7,7 @@
         :data="scheduleList"
         :columns="columns"
         :filter="filter"
+        :rows-per-page-options="[0, 10, 20, 50]"
       >
         <!-- HEADER -->
         <template v-slot:top-right>

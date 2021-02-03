@@ -3,7 +3,7 @@
     <TimeSlider />
     <div class="q-ma-md row self-end">
       <PlayerNameTag />
-      <div class="row no-wrap col-sx-12 col-sm-5 respBtns">
+      <div class="row no-wrap col-sx-12 col-sm-3 col-md-4 col-xl-5 respBtns">
         <q-btn
           :color="player.playMode==='Playlist' ? 'red' : ''"
           flat
@@ -18,7 +18,7 @@
           <q-tooltip>Open file for play</q-tooltip>
         </q-btn>
       </div>
-      <div class="row no-wrap col-sx-12 col-sm-3 respBtns">
+      <div class="row no-wrap col-sx-12 col-sm-3 col-md-2 col-xl-1 respBtns">
         <Volume />
       </div>
     </div>
@@ -60,6 +60,7 @@ import { mapState } from 'vuex'
 import { BroadcastZone } from '../../mixins/broadcastZone'
 import { msToHms } from '../../mixins/msToHMS'
 import { Scheduler } from '../../mixins/scheduler'
+import { playerEvent } from '../../mixins/playEvnet'
 import TimeSlider from './timeSlider'
 import PlayerNameTag from './PlayerNameTag'
 import PlayProgress from './PlayProgress'
@@ -69,7 +70,7 @@ import Volume from './Volume'
 
 export default {
   name: 'componetPlayer',
-  mixins: [BroadcastZone, Scheduler, msToHms],
+  mixins: [BroadcastZone, Scheduler, msToHms, playerEvent],
   components: { TimeSlider, PlayerNameTag, PlayProgress, PlayConfirm, PlayBtns, Volume },
   data () {
     return {
@@ -87,82 +88,69 @@ export default {
       status: state => state.status.status
     })
   },
-  mounted () {
-    this.$root.$on('changePlayFile', async (file) => {
-      this.chgPlayFile(file)
-    })
-    this.$root.$on('play', async () => {
-      if (!this.player.playing) {
-        this.playConfirm()
-      } else {
-        this.$refs.audio.pause()
-      }
-    })
-    this.$root.$on('stop', () => {
-      this.stop()
-    })
-    this.$root.$on('mute', async () => {
-      this.$store.commit('playFile/updateMute')
-      this.$refs.audio.muted = this.player.mute
-    })
-    this.$root.$on('vol', (value) => {
-      this.$store.commit('playFile/updateVol', value)
-      this.$refs.audio.volume = value / 100
-      console.log(this.player.mute)
-    })
-    this.$root.$on('changePlayTime', (value) => {
-      this.$refs.audio.currentTime = value
-    })
-    this.$root.$on('change-audiooutput', (current) => {
-      this.$refs.audio.setSinkId(current.deviceId)
-    })
-    ipcRenderer.on('returnMeta', (event, meta) => {
-      this.$store.commit('playFile/updateMeta', meta)
-    })
+  mounted: function () {
+    this.$root.$on('changePlayFile', this.chgPlayFile)
+    this.$root.$on('play', this.playConfirm)
+    this.$root.$on('stop', this.stop)
+    this.$root.$on('mute', this.mute)
+    this.$root.$on('vol', this.updateVol)
+    this.$root.$on('changePlayTime', this.changeTime)
+    this.$root.$on('change-audiooutput', this.setAudioDevice)
     this.volume = this.$refs.audio.volume * 100
   },
   methods: {
-    setPlayMode () {
-      if (this.player.playMode === 'Playlist') {
-        this.$store.commit('playFile/playMode', 'File')
-      } else {
-        this.$store.commit('playFile/playMode', 'Playlist')
-      }
-    },
     async open (data) {
       await this.$store.dispatch('playFile/playing', false)
       await this.openFile(data)
       await this.$refs.audio.load()
     },
     async playConfirm () {
-      await this.selectZonesToString(true)
-      if (this.player.globalPlaying) {
-        this.$refs.audio.play()
-      } else if (!this.player.file) {
-        this.$refs.file.pickFiles()
-      } else if (this.status.selected.length === 0) {
-        this.$q.notify({
+      // if playing
+      if (this.player.playing) {
+        return this.$refs.audio.pause()
+      }
+      // if none select file
+      if (!this.player.file) {
+        return this.$refs.file.pickFiles()
+      }
+      // if no select broadcast zone
+      if (this.status.selected.length === 0) {
+        const msg = {
           type: 'negative',
           position: 'top',
           message: 'Please select broadcast zones!'
-        })
-      } else if (this.player.broadcastZone.overlap.length > 0) {
-        this.$q.notify({
+        }
+        return this.$q.notify(msg)
+      }
+      // breadcast zones overlap check
+      const overlap = await this.checkOverlapZones(this.status.selected)
+      console.log('overlap', overlap)
+      if (overlap) {
+        const msg = {
           type: 'negative',
           position: 'top',
-          message: `Please check zones ${this.player.broadcastZone.overlap.join(',')}`
-        })
-      } else {
-        this.playconfirmDialog = true
+          message: 'Please check broadcast zones'
+        }
+        return this.$q.notify(msg)
       }
+      this.playconfirmDialog = true
+      // if (this.player.globalPlaying) {
+      //   this.$refs.audio.play()
+      // } else {
+      //   this.playconfirmDialog = true
+      // }
     },
     async play () {
+      const result = await this.calZoneSelect('start', this.status.selected)
+      console.log(result)
       await ipcRenderer.sendSync('udpsend', this.player.broadcastZone.idx)
       if (this.status.playlock) {
         this.progressDialog = true
       }
       this.$store.commit('playFile/play', true)
-      this.$refs.audio.play()
+      setTimeout(() => {
+        this.$refs.audio.play()
+      }, 1000)
     },
     async stop () {
       await this.$refs.audio.pause()
@@ -187,16 +175,24 @@ export default {
         }
       } else if (this.player.playMode === 'Schedule') {
         this.stop()
+      } else {
+        this.stop()
       }
-      // this.stop()
       console.log('ended')
     },
     changeTime (value) {
       this.$refs.audio.currentTime = value
     },
+    async mute () {
+      await this.$store.dispatch('playFile/updateMute')
+      this.$refs.audio.muted = this.player.mute
+    },
+    updateVol (value) {
+      this.$store.commit('playFile/updateVol', value)
+      this.$refs.audio.volume = value / 100
+    },
     async chgPlayFile (file) {
       await this.$store.dispatch('playFile/updatePlayFile', file)
-      await this.$store.dispatch('playFile/playing', false)
       await ipcRenderer.send('reqMeta', this.player.file.path)
       await this.$refs.audio.load()
       if (this.player.globalPlaying) {

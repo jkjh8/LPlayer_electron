@@ -15,6 +15,9 @@ export function editSchedule (state, payload) {
 }
 
 export function enableUpdate (state, idx) {
-  console.log(state.scheduleList[idx])
   state.scheduleList[idx].enable = !state.scheduleList[idx].enable
+}
+
+export function updateCurrentSchedule (state, payload) {
+  state.currentSchedule = payload
 }

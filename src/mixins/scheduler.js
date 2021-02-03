@@ -7,7 +7,8 @@ const dbScheduler = remote.getGlobal('dbScheduler')
 export const Scheduler = {
   computed: {
     ...mapState({
-      scheduleList: state => state.scheduler.scheduleList
+      scheduleList: state => state.scheduler.scheduleList,
+      currentSchedule: state => state.scheduler.currentSchedule
     })
   },
   data () {
@@ -35,10 +36,12 @@ export const Scheduler = {
         const weekday = moment().day()
         this.scheduleList.forEach(schedule => {
           if (schedule.enable && schedule.time === time) {
-            this.schedule = schedule
+            // this.schedule = schedule
+            this.$store.commit('scheduler/updateCurrentSchedule', schedule)
             if (schedule.mode === 'Weeks') {
               schedule.weeks.forEach(week => {
                 if (week.value === weekday) {
+                  this.schedulePlay()
                   console.log('week event', schedule)
                 }
               })
@@ -51,21 +54,21 @@ export const Scheduler = {
       }
     },
     async schedulePlay () {
-      if (this.schedule.mode === 'Once') {
+      if (this.currentSchedule.mode === 'Once') {
         this.updateScheduleEnable()
       }
-      await this.selectZonesToString(true)
-      if (this.player.broadcastZone.overlap.length > 0) {
+      const overlap = await this.checkOverlapZones(this.currentSchedule.zones)
+      if (overlap.length > 0) {
         this.$q.notify({
           type: 'negative',
           position: 'top',
-          message: `Please check zones ${this.player.broadcastZone.overlap.join(',')}`
+          message: `Please check zones ${overlap.map(e => e.name).join(',')}`
         })
       } else {
         await this.$store.commit('playFile/playMode', 'Schedule')
-        await this.$store.commit('status/updateSelected', this.schedule.zones)
+        await this.$store.commit('status/updateSelected', this.currentSchedule.zones)
         await this.selectZonesToString(true)
-        await this.chgPlayFile(this.schedule.file)
+        await this.chgPlayFile(this.currentSchedule.file)
         await ipcRenderer.sendSync('udpsend', this.player.broadcastZone.idx)
         this.progressDialog = true
         this.$store.commit('playFile/play', true)

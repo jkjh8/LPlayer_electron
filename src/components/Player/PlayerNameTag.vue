@@ -1,5 +1,5 @@
 <template>
-  <div class="row no-wrap col-xs-12 col-sm-4 q-px-md">
+  <div class="row no-wrap col-xs-12 col-sm-6 q-px-md">
     <div
       v-show="player.playMode === 'Playlist'"
       class="q-mt-xs q-mx-md text-overline respText"

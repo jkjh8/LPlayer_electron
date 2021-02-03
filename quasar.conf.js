@@ -185,7 +185,11 @@ module.exports = function (/* ctx */) {
       builder: {
         // https://www.electron.build/configuration/configuration
 
-        appId: 'lotte-d-player'
+        appId: 'lotte-d-player',
+        nsis: {
+          oneClick: false,
+          allowToChangeInstallationDirectory: true
+        }
       },
 
       // More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
