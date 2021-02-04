@@ -15,6 +15,25 @@
       :rows-per-page-options="[0, 5, 10 ,20, 30]"
       @update:selected="selectedCallback"
     >
+      <template v-slot:top-left>
+        <span class="text-h6">Status</span>
+        <q-btn
+          flat
+          round
+          class="q-mx-xs"
+          icon="restart_alt"
+          @click="reset"
+        >
+          <q-tooltip
+            anchor="top middle"
+            self="bottom middle"
+            :offset="[10, 10]"
+          >
+            Reset
+          </q-tooltip>
+        </q-btn>
+      </template>
+
       <template v-slot:top-right>
         <q-btn
           flat
@@ -172,6 +191,9 @@ export default {
     },
     selectedCallback (data) {
       this.$store.commit('status/updateSelected', data)
+    },
+    reset () {
+      ipcRenderer.send('udpsendreset', this.status.booth)
     }
   }
 }

@@ -12,18 +12,30 @@
       label
       color="teal"
       @input="$root.$emit('vol', $event)"
+      @pan="slideClickEvent"
     />
   </div>
 </template>
 
 <script>
 import { mapState } from 'vuex'
+import { log } from '../../mixins/log'
+
 export default {
+  mixins: [log],
   props: ['popup'],
   computed: {
     ...mapState({
-      player: state => state.playFile.player
+      player: state => state.playFile.player,
+      status: state => state.status.status
     })
+  },
+  methods: {
+    slideClickEvent (phase) {
+      if (phase === 'end') {
+        this.logSend('Live', `Volume Slide Change at: ${this.player.volume}`)
+      }
+    }
   }
 }
 </script>

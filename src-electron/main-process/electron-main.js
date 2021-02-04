@@ -1,5 +1,6 @@
-import { app, BrowserWindow, nativeTheme, ipcMain, Manu, Menu } from 'electron'
+import { app, BrowserWindow, nativeTheme, ipcMain, Menu } from 'electron'
 import mediainfo from 'node-mediainfo'
+import ip from "ip"
 require('./db/db')
 
 // udp sender
@@ -7,6 +8,8 @@ const dgram = require('dgram')
 const client = dgram.createSocket('udp4')
 const host = '192.168.1.19'
 const port = 5008
+const logServer = '192.168.1.25'
+const logServerPort = 9999
 
 const webApi = require('./web/webApi')
 
@@ -101,5 +104,16 @@ ipcMain.on('udpsendreset', async (event, booth) => {
   client.send(message, 0, message.length, port, host, (err, bytes) => {
     if (err) event.returnValue = 'error'
     console.log(`UDP message send to ${host}:${port} message: ${message}`)
+  })
+})
+
+ipcMain.on('log', (event, msg) => {
+  console.log('log', msg)
+  const message = msg
+  message.ip = ip.address()
+  const jsonMsg = JSON.stringify(message)
+  client.send(jsonMsg, 0, jsonMsg.length, logServerPort, logServer, (err, bytes) => {
+    if (err) console.log('Send log error')
+    console.log(`UDP Log message send to ${logServer}:${logServerPort} message: ${msg}`)
   })
 })

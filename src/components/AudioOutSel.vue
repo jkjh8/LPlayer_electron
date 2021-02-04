@@ -18,15 +18,23 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import { log } from '../mixins/log'
 import { remote } from 'electron'
 const dbStatus = remote.getGlobal('dbStatus')
 
 export default {
+  mixins: [log],
   data () {
     return {
       sel: null,
       options: []
     }
+  },
+  computed: {
+    ...mapState({
+      status: state => state.status.status
+    })
   },
   async mounted () {
     const devices = await navigator.mediaDevices.enumerateDevices()
@@ -45,6 +53,7 @@ export default {
         { upsert: true }
       )
       this.$root.$emit('change-audiooutput', device)
+      this.logSend('System', `Change audio device: ${device.label}`)
     }
   }
 }

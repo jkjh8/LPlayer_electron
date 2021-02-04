@@ -6,7 +6,7 @@
       flat
       round
       icon="skip_previous"
-      @click="$root.$emit('playlist-previous')"
+      @click="$root.$emit('playlist-previous', {})"
     />
     <!-- play btn -->
     <q-btn
@@ -14,7 +14,7 @@
       round
       :color="player.playing ? 'green' : ''"
       :icon="player.playing ? 'pause' : 'play_arrow'"
-      @click="$root.$emit('play')"
+      @click="$root.$emit('play', {})"
     >
       <q-tooltip>Start the broadcast process</q-tooltip>
     </q-btn>
@@ -23,7 +23,7 @@
       flat
       round
       icon="stop"
-      @click="$root.$emit('stop')"
+      @click="$root.$emit('stop', {})"
     >
       <q-tooltip>Stop the broadcast process</q-tooltip>
     </q-btn>
@@ -33,7 +33,7 @@
       flat
       round
       icon="skip_next"
-      @click="$root.$emit('playlist-next')"
+      @click="$root.$emit('playlist-next', {})"
     />
     <!-- loop button  -->
     <q-btn

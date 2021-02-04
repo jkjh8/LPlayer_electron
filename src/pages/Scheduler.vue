@@ -131,13 +131,16 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import addSchedule from '../components/ScheduleDialog'
 import moment from 'moment'
 import { remote } from 'electron'
+import { log } from '../mixins/log'
 const dbScheduler = remote.getGlobal('dbScheduler')
 
 export default {
   name: 'PageScheduler',
+  mixins: [log],
   components: { addSchedule },
   data () {
     return {
@@ -158,6 +161,11 @@ export default {
       mode: 'Add Schedule'
     }
   },
+  computed: {
+    ...mapState({
+      status: state => state.status.status
+    })
+  },
   async mounted () {
     // dbScheduler.remove({}, { multi: true })
     this.$root.$on('refreshPlaylist', () => {
@@ -175,6 +183,7 @@ export default {
       const enable = !item.enable
       dbScheduler.update({ _id: item._id }, { $set: { enable: enable } }, { upsert: true })
       this.updateList()
+      this.logSchedule('Change Status', item)
     },
     addSchedule () {
       this.mode = 'Add Schedule'
@@ -189,6 +198,7 @@ export default {
       }).onOk(async () => {
         await dbScheduler.remove({}, { multi: true })
         this.updateList()
+        this.logSend('Schedule', 'Remove all schedule')
       })
     },
     editSchedule (data) {
@@ -199,6 +209,7 @@ export default {
     async delSchedule (item) {
       await dbScheduler.remove({ _id: item._id })
       this.updateList()
+      this.logSchedule('Delete', item)
     },
     zonesNameString (zones) {
       const zoneNameArray = []
@@ -209,11 +220,7 @@ export default {
     },
     displayMode (mode, week) {
       if (mode === 'Weeks') {
-        const toStr = []
-        week.forEach(item => {
-          toStr.push(item.label)
-        })
-        return toStr.join(', ')
+        return week.map(e => e.label).join(', ')
       } else {
         return mode
       }

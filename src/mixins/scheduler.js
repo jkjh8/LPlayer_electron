@@ -35,6 +35,7 @@ export const Scheduler = {
       if (this.scheduleList) {
         const weekday = moment().day()
         this.scheduleList.forEach(schedule => {
+          console.log(schedule.enable)
           if (schedule.enable && schedule.time === time) {
             // this.schedule = schedule
             this.$store.commit('scheduler/updateCurrentSchedule', schedule)
@@ -58,26 +59,29 @@ export const Scheduler = {
         this.updateScheduleEnable()
       }
       const overlap = await this.checkOverlapZones(this.currentSchedule.zones)
-      if (overlap.length > 0) {
+      if (overlap) {
         this.$q.notify({
           type: 'negative',
           position: 'top',
           message: `Please check zones ${overlap.map(e => e.name).join(',')}`
         })
+        this.logSend('Schedule', `Overlap Zone: ${overlap.map(e => e.name).join(',')}`)
       } else {
         await this.$store.commit('playFile/playMode', 'Schedule')
         await this.$store.commit('status/updateSelected', this.currentSchedule.zones)
-        await this.selectZonesToString(true)
-        await this.chgPlayFile(this.currentSchedule.file)
-        await ipcRenderer.sendSync('udpsend', this.player.broadcastZone.idx)
+        await this.$root.$emit('changePlayFile', this.currentSchedule.file)
+        const result = await this.calZoneSelect('play', this.status.selected)
+        this.$store.commit('playFile/updateBroadcastZone', result.map(e => e.name).join(','))
+        await ipcRenderer.sendSync('udpsend', `t:onair,${result.map(e => e.idx).join(',')}`)
         this.progressDialog = true
         this.$store.commit('playFile/play', true)
         this.$refs.audio.play()
+        this.logSchedule('Play', this.currentSchedule)
       }
     },
     async updateScheduleEnable () {
-      const enable = !this.schedule.enable
-      await dbScheduler.update({ _id: this.schedule._id }, { $set: { enable: enable } }, { upsert: true })
+      const enable = !this.currentSchedule.enable
+      await dbScheduler.update({ _id: this.currentSchedule._id }, { $set: { enable: enable } }, { upsert: true })
       this.$root.$emit('refreshPlaylist')
     }
   }

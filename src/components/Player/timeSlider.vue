@@ -17,18 +17,18 @@
 <script>
 import { mapState } from 'vuex'
 import { msToHms } from '../../mixins/msToHMS'
+import { log } from '../../mixins/log'
 
 export default {
-  mixins: [msToHms],
+  mixins: [msToHms, log],
   computed: {
     ...mapState({
-      player: state => state.playFile.player
+      player: state => state.playFile.player,
+      status: state => state.status.status
     })
   },
   created () {
-    this.$root.$on('updatePlayTime', (value) => {
-      this.time = value
-    })
+    this.$root.$on('updatePlayTime', this.updateTime)
   },
   data () {
     return {
@@ -37,11 +37,16 @@ export default {
     }
   },
   methods: {
+    updateTime (value) {
+      this.time = value
+    },
     changeTime (value) {
       this.$root.$emit('changePlayTime', value)
     },
     slideClickEvent (phase) {
-      console.log(phase)
+      if (phase === 'end') {
+        this.logSend('Live', `Time Slide Change at: ${this.time}`)
+      }
     }
   }
 }

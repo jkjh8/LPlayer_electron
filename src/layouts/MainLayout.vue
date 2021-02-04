@@ -56,6 +56,7 @@ import zones from '../Zone.json'
 import moment from 'moment'
 import { mapState } from 'vuex'
 import { ipcRenderer, remote } from 'electron'
+import { log } from '../mixins/log'
 import Player from '../components/Player/Player'
 import Startup from '../components/Start'
 const dbStatus = remote.getGlobal('dbStatus')
@@ -63,6 +64,7 @@ const dbScheduler = remote.getGlobal('dbScheduler')
 
 export default {
   name: 'MainLayout',
+  mixins: [log],
   components: { Player, Startup },
   computed: {
     ...mapState({
@@ -90,6 +92,7 @@ export default {
       this.$store.commit('status/updatePlaylock', result.value)
     }
     this.clock()
+    this.logSend('System', 'Start Event Player')
   },
   beforeDestroy () {
     ipcRenderer.send('udpsendreset', this.status.booth)

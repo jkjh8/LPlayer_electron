@@ -13,9 +13,11 @@
 <script>
 import { mapState } from 'vuex'
 import { ipcRenderer, remote } from 'electron'
+import { log } from '../mixins/log'
 const dbStatus = remote.getGlobal('dbStatus')
 
 export default {
+  mixins: [log],
   computed: {
     ...mapState({
       status: state => state.status.status
@@ -34,10 +36,12 @@ export default {
   },
   methods: {
     async chgBooth (idx) {
+      const priNum = this.status.booth - 9
       const boothNum = Number(idx) + 9
       await dbStatus.update({ id: 'booth' }, { id: 'booth', value: boothNum }, { upsert: true })
       this.$store.commit('status/changeBooth', boothNum)
       ipcRenderer.send('udpsendreset', boothNum)
+      this.logSend('System', `Change Booth Number: ${priNum} to ${idx}`)
     }
   }
 }

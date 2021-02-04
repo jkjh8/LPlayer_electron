@@ -64,29 +64,26 @@
 import { mapState } from 'vuex'
 import { remote } from 'electron'
 import moment from 'moment'
+import { log } from '../mixins/log'
 const dbScheduler = remote.getGlobal('dbScheduler')
 
 export default {
+  mixins: [log],
   props: {
     mode: { type: String, default: 'Add Schedule' },
-    schedule: {
-      type: Object,
-      default: () => {
-        return {
-          name: '',
-          file: null,
-          zones: [],
-          mode: 'Once',
-          weeks: [],
-          time: moment().format('HH:mm'),
-          enable: true
-        }
-      }
-    }
+    schedule: { type: Object }
   },
   data () {
     return {
-      data: Object.assign({}, this.schedule),
+      data: {
+        name: this.schedule.name,
+        file: this.schedule.file,
+        zones: this.schedule.zones,
+        mode: this.schedule.mode,
+        weeks: this.schedule.weeks,
+        time: this.schedule.time,
+        enable: this.schedule.enable
+      },
       modeOptions: ['Once', 'Every Day', 'Weeks'],
       weekOptions: [
         { label: 'Sun', value: 0 },
@@ -101,7 +98,8 @@ export default {
   },
   computed: {
     ...mapState({
-      zones: state => state.status.status.zones
+      zones: state => state.status.status.zones,
+      status: state => state.status.status
     })
   },
   methods: {
@@ -120,8 +118,10 @@ export default {
       }
       if (this.mode === 'Add Schedule') {
         await dbScheduler.insert(this.data)
+        this.logSchedule('Add Schedule', this.data)
       } else {
         await dbScheduler.update({ _id: this.schedule._id }, this.data)
+        this.logSchedule('Update Schedule', this.data)
       }
       this.$emit('refresh')
       this.close()

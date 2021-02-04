@@ -61,6 +61,7 @@ import { BroadcastZone } from '../../mixins/broadcastZone'
 import { msToHms } from '../../mixins/msToHMS'
 import { Scheduler } from '../../mixins/scheduler'
 import { playerEvent } from '../../mixins/playEvnet'
+import { log } from '../../mixins/log'
 import TimeSlider from './timeSlider'
 import PlayerNameTag from './PlayerNameTag'
 import PlayProgress from './PlayProgress'
@@ -70,7 +71,7 @@ import Volume from './Volume'
 
 export default {
   name: 'componetPlayer',
-  mixins: [BroadcastZone, Scheduler, msToHms, playerEvent],
+  mixins: [BroadcastZone, Scheduler, msToHms, playerEvent, log],
   components: { TimeSlider, PlayerNameTag, PlayProgress, PlayConfirm, PlayBtns, Volume },
   data () {
     return {
@@ -133,17 +134,17 @@ export default {
         }
         return this.$q.notify(msg)
       }
-      this.playconfirmDialog = true
-      // if (this.player.globalPlaying) {
-      //   this.$refs.audio.play()
-      // } else {
-      //   this.playconfirmDialog = true
-      // }
+      if (this.player.globalPlaying) {
+        this.$refs.audio.play()
+      } else {
+        this.playconfirmDialog = true
+      }
     },
     async play () {
-      const result = await this.calZoneSelect('start', this.status.selected)
+      const result = await this.calZoneSelect('play', this.status.selected)
       console.log(result)
-      await ipcRenderer.sendSync('udpsend', this.player.broadcastZone.idx)
+      this.$store.commit('playFile/updateBroadcastZone', result.map(e => e.name).join(','))
+      await ipcRenderer.sendSync('udpsend', `t:onair,${result.map(e => e.idx).join(',')}`)
       if (this.status.playlock) {
         this.progressDialog = true
       }
@@ -151,17 +152,18 @@ export default {
       setTimeout(() => {
         this.$refs.audio.play()
       }, 1000)
+      this.logSend('Live', `Play Audio File: ${this.player.file.path}, Zones: ${this.player.broadcastZone}`)
     },
     async stop () {
-      await this.$refs.audio.pause()
+      this.$refs.audio.pause()
       this.progressDialog = false
       if (this.player.globalPlaying) {
-        await this.selectZonesToString(false)
-        const result = await ipcRenderer.sendSync('udpsend', this.player.broadcastZone.idx)
-        console.log(result)
+        const result = await this.calZoneSelect('stop', this.status.selected)
+        await ipcRenderer.sendSync('udpsend', `t:onair,${result.map(e => e.idx).join(',')}`)
         this.$store.commit('playFile/play', false)
       }
       this.$refs.audio.currentTime = 0
+      this.logSend('Live', 'Play Audio Stop')
     },
     async ended () {
       if (this.player.playMode === 'Playlist') {
@@ -178,7 +180,6 @@ export default {
       } else {
         this.stop()
       }
-      console.log('ended')
     },
     changeTime (value) {
       this.$refs.audio.currentTime = value
@@ -186,15 +187,16 @@ export default {
     async mute () {
       await this.$store.dispatch('playFile/updateMute')
       this.$refs.audio.muted = this.player.mute
+      this.logSend('Live', `Play Audio Mute: ${this.player.mute}`)
     },
     updateVol (value) {
       this.$store.commit('playFile/updateVol', value)
       this.$refs.audio.volume = value / 100
     },
     async chgPlayFile (file) {
-      await this.$store.dispatch('playFile/updatePlayFile', file)
-      await ipcRenderer.send('reqMeta', this.player.file.path)
-      await this.$refs.audio.load()
+      this.$store.dispatch('playFile/updatePlayFile', file)
+      ipcRenderer.send('reqMeta', this.player.file.path)
+      this.$refs.audio.load()
       if (this.player.globalPlaying) {
         this.$refs.audio.play()
       }

@@ -32,18 +32,17 @@ export const BroadcastZone = {
       }
     },
     calZoneSelect (state, selected) {
-      console.log(selected)
-      // const zones = []
-      // if (selected.length > 0) {
-      //   selected.forEach(item => {
-      //     if (state === 'play') {
-      //       zones.push({ name: item.name, idx: `${item.id}:${this.status.booth}` })
-      //     } else {
-      //       zones.push({ name: item.name, idx: `${item.id}:0` })
-      //     }
-      //   })
-      // }
-      // return zones
+      const zones = []
+      if (selected.length > 0) {
+        selected.forEach(item => {
+          if (state === 'play') {
+            zones.push({ name: item.name, idx: `${item.id}:${this.status.booth}` })
+          } else {
+            zones.push({ name: item.name, idx: `${item.id}:0` })
+          }
+        })
+      }
+      return zones
     },
     checkOverlapZones (zones) {
       const overlap = []

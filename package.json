@@ -13,6 +13,7 @@
     "@quasar/extras": "^1.0.0",
     "core-js": "^3.6.5",
     "express": "^4.17.1",
+    "ip": "^1.1.5",
     "moment": "^2.29.1",
     "nedb-promises": "^4.1.1",
     "node-mediainfo": "^1.0.3",

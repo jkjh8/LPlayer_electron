@@ -12,12 +12,7 @@ export default function () {
       playMode: 'File',
       playlistLoop: false,
       duration: 0,
-      brocastZone: {
-        idx: '',
-        name: '',
-        selected: [],
-        overlap: []
-      }
+      broadcastZone: ''
     }
   }
 }

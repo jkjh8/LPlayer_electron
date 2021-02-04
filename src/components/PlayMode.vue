@@ -23,9 +23,11 @@
 <script>
 import { mapState } from 'vuex'
 import { remote } from 'electron'
+import { log } from '../mixins/log'
 const dbStatus = remote.getGlobal('dbStatus')
 
 export default {
+  mixins: [log],
   computed: {
     ...mapState({
       status: state => state.status.status
@@ -50,6 +52,7 @@ export default {
         { id: 'playlock', value: value },
         { upsert: true }
       )
+      this.logSend('System', `Change PlayLock: ${value}`)
     }
   }
 }

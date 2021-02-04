@@ -43,7 +43,7 @@
         </div>
         <div>
           <span class="text-h6 text-weight-bold">Zones </span>
-          <span class="text-body2 text-weight-light">{{ player.broadcastZone.name }}</span>
+          <span class="text-body2 text-weight-light">{{ player.broadcastZone }}</span>
         </div>
       </div>
     </q-card-section>
@@ -70,8 +70,7 @@ export default {
   },
   methods: {
     stop () {
-      this.$emit('stop')
-      this.$emit('close')
+      this.$root.$emit('stop', {})
     }
   }
 }
