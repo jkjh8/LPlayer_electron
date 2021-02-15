@@ -1,6 +1,7 @@
 import { app, BrowserWindow, nativeTheme, ipcMain, Menu } from 'electron'
 import mediainfo from 'node-mediainfo'
-import ip from "ip"
+import ip from 'ip'
+import fs from 'fs'
 require('./db/db')
 
 // udp sender
@@ -78,8 +79,11 @@ mCast.on('message', (data, rinfo) => {
 
 ipcMain.on('reqMeta', async (event, filePath) => {
   const result = await mediainfo(filePath)
-  console.log(result)
   event.reply('returnMeta', result)
+})
+
+ipcMain.on('checkFile', async (event, file) => {
+  event.returnValue = await fs.existsSync(file)
 })
 
 ipcMain.on('udpsend', async (event, message) => {

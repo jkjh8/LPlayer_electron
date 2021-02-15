@@ -3,7 +3,7 @@ export default function () {
     status: {
       zones: [],
       selected: [],
-      booth: 1,
+      booth: 10,
       playlock: false
     }
   }

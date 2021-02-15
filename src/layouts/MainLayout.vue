@@ -75,24 +75,32 @@ export default {
     return {
       tab: 'player',
       startupDialog: false,
-      time: ''
+      time: '',
+      booth: null
     }
   },
   async mounted () {
+    this.$store.commit('status/updateZones', zones)
     // await dbStatus.update({ id: 'booth' }, { $set: { value: 10 } })
-    const booth = await dbStatus.findOne({ id: 'booth' })
-    await this.$store.commit('status/updateZones', zones)
-    await this.$store.commit('status/changeBooth', booth.value)
-    await ipcRenderer.send('udpsendreset', this.status.booth)
-    this.startupDialog = true
-    const schedule = await dbScheduler.find().sort({ createAt: 1 })
-    this.$store.commit('scheduler/updateSchedule', schedule)
-    const result = await dbStatus.findOne({ id: 'playlock' })
-    if (result) {
-      this.$store.commit('status/updatePlaylock', result.value)
-    }
+    // this.booth = await dbStatus.findOne({ id: 'booth' })
+    // if (!this.booth) {
+    //   this.booth = 10
+    //   await dbStatus.update({ id: 'booth', value: 10 })
+    //   await dbStatus.update({ id: 'playlock', value: true })
+    //   console.log(this.booth)
+    // }
+    //   await this.$store.commit('status/changeBooth', this.booth.value)
+    //   const result = await dbStatus.findOne({ id: 'playlock' })
+    //   this.$store.commit('status/updatePlaylock', result.value)
+    // }
+    // await this.$store.commit('status/updateZones', zones)
+    // await ipcRenderer.send('udpsendreset', this.status.booth)
+    await this.callBooth()
+    await this.lunchSchedule()
+    await this.callPlayLock()
     this.clock()
-    this.logSend('System', 'Start Event Player')
+    // this.logSend('System', 'Start Event Player')
+    await this.callStartup()
   },
   beforeDestroy () {
     ipcRenderer.send('udpsendreset', this.status.booth)
@@ -105,6 +113,32 @@ export default {
       setInterval(() => {
         this.time = moment().format('YYYY/MM/D HH:mm:ss')
       }, 1000)
+    },
+    async callBooth () {
+      const booth = await dbStatus.findOne({ id: 'booth' })
+      if (booth) {
+        this.booth = booth.value
+        this.$store.commit('status/changeBooth', this.booth)
+      } else {
+        this.booth = 10
+        await dbStatus.update({ id: 'booth', value: 10 })
+      }
+    },
+    async callPlayLock () {
+      const lock = await dbStatus.findOne({ id: 'playlock' })
+      if (lock) {
+        this.$store.commit('status/updatePlaylock', lock.value)
+      } else {
+        this.$store.commit('status/updatePlaylock', true)
+        dbStatus.update({ id: 'playlock', value: true })
+      }
+    },
+    callStartup () {
+      this.startupDialog = true
+    },
+    async lunchSchedule () {
+      const schedule = await dbScheduler.find().sort({ createAt: 1 })
+      this.$store.commit('scheduler/updateSchedule', schedule)
     }
   }
 }

@@ -156,7 +156,15 @@ export default {
         { name: 'actions', align: 'center', label: 'Actions', field: 'actions' }
       ],
       add: false,
-      schedule: null,
+      schedule: {
+        name: '',
+        file: null,
+        zones: [],
+        mode: 'Once',
+        weeks: [],
+        time: moment().format('HH:mm'),
+        enable: null
+      },
       scheduleList: [],
       mode: 'Add Schedule'
     }

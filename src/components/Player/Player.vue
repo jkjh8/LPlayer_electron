@@ -114,6 +114,15 @@ export default {
       if (!this.player.file) {
         return this.$refs.file.pickFiles()
       }
+      const result = await ipcRenderer.sendSync('checkFile', this.player.file.path)
+      if (!result) {
+        const msg = {
+          type: 'negative',
+          position: 'top',
+          message: 'Please check file!'
+        }
+        return this.$q.notify(msg)
+      }
       // if no select broadcast zone
       if (this.status.selected.length === 0) {
         const msg = {
@@ -141,10 +150,10 @@ export default {
       }
     },
     async play () {
-      const result = await this.calZoneSelect('play', this.status.selected)
-      console.log(result)
-      this.$store.commit('playFile/updateBroadcastZone', result.map(e => e.name).join(','))
-      await ipcRenderer.sendSync('udpsend', `t:onair,${result.map(e => e.idx).join(',')}`)
+      const broadcastZone = await this.calZoneSelect('play', this.status.selected)
+      console.log(broadcastZone)
+      this.$store.commit('playFile/updateBroadcastZone', broadcastZone.map(e => e.name).join(','))
+      await ipcRenderer.sendSync('udpsend', `t:onair,${broadcastZone.map(e => e.idx).join(',')}`)
       if (this.status.playlock) {
         this.progressDialog = true
       }
@@ -158,8 +167,8 @@ export default {
       this.$refs.audio.pause()
       this.progressDialog = false
       if (this.player.globalPlaying) {
-        const result = await this.calZoneSelect('stop', this.status.selected)
-        await ipcRenderer.sendSync('udpsend', `t:onair,${result.map(e => e.idx).join(',')}`)
+        const broadcastZone = await this.calZoneSelect('stop', this.status.selected)
+        await ipcRenderer.sendSync('udpsend', `t:onair,${broadcastZone.map(e => e.idx).join(',')}`)
         this.$store.commit('playFile/play', false)
       }
       this.$refs.audio.currentTime = 0

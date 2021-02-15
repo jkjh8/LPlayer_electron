@@ -58,6 +58,17 @@ export const Scheduler = {
       if (this.currentSchedule.mode === 'Once') {
         this.updateScheduleEnable()
       }
+      await this.$root.$emit('changePlayFile', this.currentSchedule.file)
+      const result = await ipcRenderer.sendSync('checkFile', this.player.file.path)
+      if (!result) {
+        const msg = {
+          type: 'negative',
+          position: 'top',
+          message: 'Please check file!'
+        }
+        this.logSend('Schedule', 'The schedule didnt work. The file does not exist.')
+        return this.$q.notify(msg)
+      }
       const overlap = await this.checkOverlapZones(this.currentSchedule.zones)
       if (overlap) {
         this.$q.notify({
@@ -69,10 +80,9 @@ export const Scheduler = {
       } else {
         await this.$store.commit('playFile/playMode', 'Schedule')
         await this.$store.commit('status/updateSelected', this.currentSchedule.zones)
-        await this.$root.$emit('changePlayFile', this.currentSchedule.file)
-        const result = await this.calZoneSelect('play', this.status.selected)
-        this.$store.commit('playFile/updateBroadcastZone', result.map(e => e.name).join(','))
-        await ipcRenderer.sendSync('udpsend', `t:onair,${result.map(e => e.idx).join(',')}`)
+        const broadcastZones = await this.calZoneSelect('play', this.status.selected)
+        this.$store.commit('playFile/updateBroadcastZone', broadcastZones.map(e => e.name).join(','))
+        await ipcRenderer.sendSync('udpsend', `t:onair,${broadcastZones.map(e => e.idx).join(',')}`)
         this.progressDialog = true
         this.$store.commit('playFile/play', true)
         this.$refs.audio.play()
