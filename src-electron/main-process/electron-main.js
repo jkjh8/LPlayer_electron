@@ -71,7 +71,7 @@ app.on('activate', () => {
 })
 
 // multicast server
-/* global mCast dbStatus */
+/* global mCast dbStatus '224.1.128.128' */
 require('./Server/Multicast')
 mCast.on('message', (data, rinfo) => {
   console.log(`Message from ${rinfo.address} : ${data.toString()}`)
@@ -90,50 +90,50 @@ ipcMain.on('checkFile', async (event, file) => {
 ipcMain.on('udpsend', async (event, message) => {
   message = `${message},!`
   console.log(message)
-  let host
-  const h = await dbStatus.findOne({ id: 'ipaddr' })
-  if (h) {
-    host = h.value
-  } else {
-    host = '172.28.242.211'
-  }
-  console.log('sendip: ', host)
-  client.send(message, 0, message.length, port, host, (err, bytes) => {
+  // let host
+  // const h = await dbStatus.findOne({ id: 'ipaddr' })
+  // if (h) {
+  //   host = h.value
+  // } else {
+  //   host = '172.28.242.211'
+  // }
+  // console.log('sendip: ', host)
+  mCast.send(message, 0, message.length, port, '224.1.128.128', (err, bytes) => {
     if (err) event.returnValue = 'error'
-    console.log(`UDP message send to ${host}:${port} message: ${message}`)
+    console.log(`UDP message send to ${'224.1.128.128'}:${port} message: ${message}`)
     event.returnValue = 'OK'
   })
 })
 
 ipcMain.on('udpsendgetstatus', async (event) => {
   const message = 't:request,!'
-  let host
-  const h = await dbStatus.findOne({ id: 'ipaddr' })
-  if (h) {
-    host = h.value
-  } else {
-    host = '172.28.242.211'
-  }
-  console.log('sendip: ', host)
-  client.send(message, 0, message.length, port, host, (err, bytes) => {
+  // let host
+  // const h = await dbStatus.findOne({ id: 'ipaddr' })
+  // if (h) {
+  //   host = h.value
+  // } else {
+  //   host = '172.28.242.211'
+  // }
+  // console.log('sendip: ', host)
+  mCast.send(message, 0, message.length, port, '224.1.128.128', (err, bytes) => {
     if (err) event.returnValue = 'error'
-    console.log(`UDP message send to ${host}:${port} message: ${message}`)
+    console.log(`UDP message send to ${'224.1.128.128'}:${port} message: ${message}`)
   })
 })
 
 ipcMain.on('udpsendreset', async (event, booth) => {
   const message = `t:booth${booth},!`
-  let host
-  const h = await dbStatus.findOne({ id: 'ipaddr' })
-  if (h) {
-    host = h.value
-  } else {
-    host = '172.28.242.211'
-  }
-  console.log('sendip: ', host)
-  client.send(message, 0, message.length, port, host, (err, bytes) => {
+  // let host
+  // const h = await dbStatus.findOne({ id: 'ipaddr' })
+  // if (h) {
+  //   host = h.value
+  // } else {
+  //   host = '172.28.242.211'
+  // }
+  // console.log('sendip: ', host)
+  mCast.send(message, 0, message.length, port, '224.1.128.128', (err, bytes) => {
     if (err) event.returnValue = 'error'
-    console.log(`UDP message send to ${host}:${port} message: ${message}`)
+    console.log(`UDP message send to ${'224.1.128.128'}:${port} message: ${message}`)
   })
 })
 
