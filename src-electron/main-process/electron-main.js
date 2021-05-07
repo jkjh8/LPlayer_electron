@@ -7,9 +7,9 @@ require('./db/db')
 // udp sender
 const dgram = require('dgram')
 const client = dgram.createSocket('udp4')
-const host = '192.168.1.19'
+// const host = '192.168.1.19'
 const port = 5008
-const logServer = '192.168.1.25'
+const logServer = '192.168.1.92'
 const logServerPort = 9999
 
 const webApi = require('./web/webApi')
@@ -71,6 +71,7 @@ app.on('activate', () => {
 })
 
 // multicast server
+/* global mCast dbStatus */
 require('./Server/Multicast')
 mCast.on('message', (data, rinfo) => {
   console.log(`Message from ${rinfo.address} : ${data.toString()}`)
@@ -87,7 +88,16 @@ ipcMain.on('checkFile', async (event, file) => {
 })
 
 ipcMain.on('udpsend', async (event, message) => {
+  message = `${message},!`
   console.log(message)
+  let host
+  const h = await dbStatus.findOne({ id: 'ipaddr' })
+  if (h) {
+    host = h.value
+  } else {
+    host = '172.28.242.211'
+  }
+  console.log('sendip: ', host)
   client.send(message, 0, message.length, port, host, (err, bytes) => {
     if (err) event.returnValue = 'error'
     console.log(`UDP message send to ${host}:${port} message: ${message}`)
@@ -97,6 +107,14 @@ ipcMain.on('udpsend', async (event, message) => {
 
 ipcMain.on('udpsendgetstatus', async (event) => {
   const message = 't:request,!'
+  let host
+  const h = await dbStatus.findOne({ id: 'ipaddr' })
+  if (h) {
+    host = h.value
+  } else {
+    host = '172.28.242.211'
+  }
+  console.log('sendip: ', host)
   client.send(message, 0, message.length, port, host, (err, bytes) => {
     if (err) event.returnValue = 'error'
     console.log(`UDP message send to ${host}:${port} message: ${message}`)
@@ -105,6 +123,14 @@ ipcMain.on('udpsendgetstatus', async (event) => {
 
 ipcMain.on('udpsendreset', async (event, booth) => {
   const message = `t:booth${booth},!`
+  let host
+  const h = await dbStatus.findOne({ id: 'ipaddr' })
+  if (h) {
+    host = h.value
+  } else {
+    host = '172.28.242.211'
+  }
+  console.log('sendip: ', host)
   client.send(message, 0, message.length, port, host, (err, bytes) => {
     if (err) event.returnValue = 'error'
     console.log(`UDP message send to ${host}:${port} message: ${message}`)
